@@ -59,6 +59,30 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
 @keyframes sp{to{transform:rotate(360deg)}}
 .empty-state{text-align:center;padding:2.5rem 1rem;color:var(--mu)}
 .empty-icon{font-size:2.5rem;margin-bottom:.5rem}
+
+/* ── QR Scanner ─────────────────────────────────── */
+.qr-btn{position:absolute;right:.5rem;top:50%;transform:translateY(-50%);background:var(--ac);border:none;border-radius:6px;color:#fff;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.1rem;flex-shrink:0}
+.qr-btn:hover{background:#4f46e5}
+.scan-area{position:relative}
+.scan-input{padding-right:3rem!important}
+.qr-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:500;flex-direction:column;align-items:center;justify-content:center}
+.qr-modal.open{display:flex}
+.qr-box{position:relative;width:min(85vw,340px);aspect-ratio:1;border-radius:12px;overflow:hidden;background:#000}
+.qr-corners{position:absolute;inset:0;pointer-events:none;z-index:2}
+.qr-corners::before,.qr-corners::after{content:'';position:absolute;width:40px;height:40px;border-color:#6366f1;border-style:solid;border-radius:4px}
+.qr-corners::before{top:10px;left:10px;border-width:3px 0 0 3px}
+.qr-corners::after{bottom:10px;right:10px;border-width:0 3px 3px 0}
+.qr-corner-tr{position:absolute;top:10px;right:10px;width:40px;height:40px;border:3px solid #6366f1;border-radius:4px;border-bottom:none;border-left:none;z-index:2}
+.qr-corner-bl{position:absolute;bottom:10px;left:10px;width:40px;height:40px;border:3px solid #6366f1;border-radius:4px;border-top:none;border-right:none;z-index:2}
+.qr-line{position:absolute;left:10px;right:10px;height:2px;background:linear-gradient(90deg,transparent,#6366f1,transparent);z-index:2;animation:qrscan 2s linear infinite}
+@keyframes qrscan{0%{top:10px}100%{top:calc(100% - 12px)}}
+#qrVideo{width:100%;height:100%;object-fit:cover}
+.qr-hint{color:rgba(255,255,255,.8);font-size:.82rem;margin-top:1rem;text-align:center}
+.qr-close{margin-top:1.25rem;background:var(--sf);border:1px solid var(--bd);color:var(--tx);padding:.55rem 1.5rem;border-radius:8px;cursor:pointer;font-size:.88rem}
+.qr-status{color:#fff;font-size:.8rem;margin-top:.6rem;min-height:1.2em;text-align:center}
+.qr-success-flash{animation:qrflash .35s ease}
+@keyframes qrflash{0%,100%{opacity:1}50%{opacity:0}}
+<link rel='stylesheet' href='css/wms-animate.css'>
 </style></head><body>
 <div class='app'>
 <div class='topbar'><span class='topbar-title'>🏭 Thủ Kho WMS</span><span class='topbar-user' id='topUser'></span></div>
@@ -73,8 +97,9 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
     <div class='card'>
       <div class='card-title'>&#128229; Nh&#7853;p kho theo VIN</div>
       <div class='scan-area'>
-        <input class='scan-input' id='ibVin' placeholder='Qu&#233;t QR ho&#7863;c nh&#7853;p VIN...' maxlength='17'>
-        <div class='scan-hint'>&#128247; Nh&#7845;n Enter ho&#7863;c qu&#233;t QR &#273;&#7875; t&#236;m xe</div>
+        <input class='scan-input' id='ibVin' placeholder='Nh&#7853;p VIN ho&#7863;c nh&#7845;n &#128247; qu&#233;t QR...' maxlength='17'>
+        <button class='qr-btn' id='btnQrIb' title='Qu&#233;t m&#227; QR / Barcode'>&#128247;</button>
+        <div class='scan-hint'>Nh&#7845;n Enter sau khi nh&#7853;p, ho&#7863;c nh&#7845;n &#128247; để mở camera</div>
       </div>
       <div id='ibVehicleInfo' style='display:none'></div>
     </div>
@@ -106,8 +131,9 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
     <div class='card'>
       <div class='card-title'>&#128666; Xu&#7845;t kho theo VIN</div>
       <div class='scan-area'>
-        <input class='scan-input' id='obVin' placeholder='Qu&#233;t QR ho&#7863;c nh&#7853;p VIN...' maxlength='17'>
-        <div class='scan-hint'>&#128247; Nh&#7845;n Enter ho&#7863;c qu&#233;t QR &#273;&#7875; t&#236;m xe</div>
+        <input class='scan-input' id='obVin' placeholder='Nh&#7853;p VIN ho&#7863;c nh&#7845;n &#128247; qu&#233;t QR...' maxlength='17'>
+        <button class='qr-btn' id='btnQrOb' title='Qu&#233;t m&#227; QR / Barcode'>&#128247;</button>
+        <div class='scan-hint'>Nh&#7845;n Enter sau khi nh&#7853;p, ho&#7863;c nh&#7845;n &#128247; để mở camera</div>
       </div>
       <div id='obVehicleInfo' style='display:none'></div>
     </div>
@@ -142,7 +168,22 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
   </div>
 </div>
 </div><!-- /app -->
+<!-- QR SCANNER MODAL -->
+<div class='qr-modal' id='qrModal'>
+  <div class='qr-box' id='qrBox'>
+    <div id='qrReader'></div>
+    <div class='qr-corners'></div>
+    <div class='qr-corner-tr'></div>
+    <div class='qr-corner-bl'></div>
+    <div class='qr-line' id='qrLine'></div>
+  </div>
+  <div class='qr-status' id='qrStatus'>&#128269; Đang khởi động camera...</div>
+  <div class='qr-hint'>Hướng camera vào mã QR / mã vạch của xe</div>
+  <button class='qr-close' id='qrClose'>&#10005; Đóng camera</button>
+</div>
+
 <div class='toast-wrap' id='toastWrap'></div>
+<script src='js/wms-ui.js'></script>
 <script src='js/api-client.js'></script>
 <script src='js/auth.js'></script>
 <script src='js/drive-upload.js'></script>
@@ -210,6 +251,7 @@ const ibVinInput = document.getElementById('ibVin');
 ibVinInput.addEventListener('keydown', async e => {
   if(e.key === 'Enter') {
     const vin = ibVinInput.value.trim().toUpperCase();
+    ibVinInput.classList.add('scanning');
     if(!vin) return;
     await lookupVehicle(vin, 'inbound');
   }
@@ -217,7 +259,7 @@ ibVinInput.addEventListener('keydown', async e => {
 
 async function lookupVehicle(vin, mode) {
   const infoEl = document.getElementById(mode === 'inbound' ? 'ibVehicleInfo' : 'obVehicleInfo');
-  infoEl.style.display = 'none';
+  UI.hide(infoEl);
   try {
     const res = await API.vehicles.getByVin(vin);
     if(!res.success || !res.data) { showToast('Kh\u00f4ng t\u00ecm th\u1ea5y xe: ' + vin, 'error'); return; }
@@ -226,10 +268,10 @@ async function lookupVehicle(vin, mode) {
       if(v.WAREHOUSE_STATUS !== 'V\u1eacN T\u1ea2I') { showToast('Xe kh\u00f4ng \u1edf tr\u1ea1ng th\u00e1i V\u1eacN T\u1ea2I! Hi\u1ec7n t\u1ea1i: ' + v.WAREHOUSE_STATUS, 'error'); return; }
       ibVehicleData = v;
       renderVehicleInfo(v, 'ibVehicleInfo');
-      infoEl.style.display = 'block';
-      document.getElementById('ibLocationCard').style.display = 'block';
-      document.getElementById('ibPhotoCard').style.display = 'block';
-      document.getElementById('btnIbSubmit').style.display = 'flex';
+      UI.show(infoEl,'anim-slide-up');
+      UI.show(document.getElementById('ibLocationCard'),'anim-slide-up');
+      UI.show(document.getElementById('ibPhotoCard'),'anim-slide-up');
+      UI.showFlex(document.getElementById('btnIbSubmit'),'anim-pop-sm');
       ibPhotos = [];
       makeImgGrid('ibImgGrid', 'ibFileInput', 10, ibPhotos);
       updateImgCount('ibImgCount', 'ibFileInput', 10, ibPhotos);
@@ -238,9 +280,9 @@ async function lookupVehicle(vin, mode) {
       if(v.WAREHOUSE_STATUS !== '\u0110\u00c3 V\u1ec0') { showToast('Xe kh\u00f4ng \u1edf tr\u1ea1ng th\u00e1i \u0110\u00c3 V\u1ec0! Hi\u1ec7n t\u1ea1i: ' + v.WAREHOUSE_STATUS, 'error'); return; }
       obVehicleData = v;
       renderVehicleInfo(v, 'obVehicleInfo');
-      infoEl.style.display = 'block';
-      document.getElementById('obFormCard').style.display = 'block';
-      document.getElementById('btnObSubmit').style.display = 'flex';
+      UI.show(infoEl,'anim-slide-up');
+      UI.show(document.getElementById('obFormCard'),'anim-slide-up');
+      UI.showFlex(document.getElementById('btnObSubmit'),'anim-pop-sm');
       obPhotos = [];
       makeImgGrid('obImgGrid', 'obFileInput', 3, obPhotos);
       updateImgCount('obImgCount', 'obFileInput', 3, obPhotos);
@@ -357,10 +399,10 @@ document.getElementById('btnIbSubmit').onclick = async function() {
       showToast('\u2705 Nh\u1eadp kho th\u00e0nh c\u00f4ng! ' + ibVehicleData.VIN + ' \u2192 ' + wh + '/' + zone + '/' + row + '/' + slot);
       ibVehicleData = null; ibPhotos = [];
       document.getElementById('ibVin').value = '';
-      document.getElementById('ibVehicleInfo').style.display = 'none';
-      document.getElementById('ibLocationCard').style.display = 'none';
-      document.getElementById('ibPhotoCard').style.display = 'none';
-      document.getElementById('btnIbSubmit').style.display = 'none';
+      UI.hide(document.getElementById('ibVehicleInfo'));
+      UI.hide(document.getElementById('ibLocationCard'));
+      UI.hide(document.getElementById('ibPhotoCard'));
+      UI.hide(document.getElementById('btnIbSubmit'));
     } else { showToast(res.message, 'error'); }
   } catch(e) { showToast('L\u1ed7i: ' + e.message, 'error'); }
   this.disabled = false;
@@ -373,6 +415,7 @@ const obVinInput = document.getElementById('obVin');
 obVinInput.addEventListener('keydown', async e => {
   if(e.key === 'Enter') {
     const vin = obVinInput.value.trim().toUpperCase();
+    obVinInput.classList.add('scanning');
     if(vin) await lookupVehicle(vin, 'outbound');
   }
 });
@@ -412,9 +455,9 @@ document.getElementById('btnObSubmit').onclick = async function() {
       showToast('\u2705 Xu\u1ea5t kho th\u00e0nh c\u00f4ng! ' + obVehicleData.VIN);
       obVehicleData = null; obPhotos = [];
       document.getElementById('obVin').value = '';
-      document.getElementById('obVehicleInfo').style.display = 'none';
-      document.getElementById('obFormCard').style.display = 'none';
-      document.getElementById('btnObSubmit').style.display = 'none';
+      UI.hide(document.getElementById('obVehicleInfo'));
+      UI.hide(document.getElementById('obFormCard'));
+      UI.hide(document.getElementById('btnObSubmit'));
       document.getElementById('obDeliverer').value = '';
       document.getElementById('obNote').value = '';
     } else { showToast(res.message, 'error'); }
@@ -449,4 +492,159 @@ async function loadInventory() {
     ).join('');
   } catch(e) { showToast(e.message, 'error'); }
 }
-</script></body></html>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+
+// ╔══════════════════════════════════════════════════════╗
+// ║  QR / BARCODE SCANNER — html5-qrcode library        ║
+// ╚══════════════════════════════════════════════════════╝
+(function() {
+  let html5Scanner = null;
+  let activeTarget = null; // 'inbound' | 'outbound'
+
+  const qrModal   = document.getElementById('qrModal');
+  const qrStatus  = document.getElementById('qrStatus');
+  const qrClose   = document.getElementById('qrClose');
+  const qrReader  = document.getElementById('qrReader');
+
+  // Nút camera INBOUND
+  document.getElementById('btnQrIb').addEventListener('click', function(e) {
+    e.preventDefault();
+    activeTarget = 'inbound';
+    openScanner();
+  });
+
+  // Nút camera OUTBOUND
+  document.getElementById('btnQrOb').addEventListener('click', function(e) {
+    e.preventDefault();
+    activeTarget = 'outbound';
+    openScanner();
+  });
+
+  // Đóng scanner
+  qrClose.addEventListener('click', closeScanner);
+  qrModal.addEventListener('click', function(e) {
+    if (e.target === qrModal) closeScanner();
+  });
+
+  function openScanner() {
+    qrModal.classList.add('open');
+    qrStatus.textContent = '\u{1f50d} \u0110ang kh\u1edfi \u0111\u1ed9ng camera...';
+    document.body.style.overflow = 'hidden';
+    startHtml5Scanner();
+  }
+
+  function closeScanner() {
+    stopScanner();
+    qrModal.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function stopScanner() {
+    if (html5Scanner) {
+      html5Scanner.stop().then(() => {
+        html5Scanner.clear();
+        html5Scanner = null;
+      }).catch(() => {
+        html5Scanner = null;
+      });
+    }
+  }
+
+  function startHtml5Scanner() {
+    if (typeof Html5Qrcode === 'undefined') {
+      qrStatus.textContent = '\u274c Th\u01b0 vi\u1ec7n QR ch\u01b0a s\u1eb5n s\u00e0ng. Ki\u1ec3m tra k\u1ebft n\u1ed1i m\u1ea1ng.';
+      return;
+    }
+
+    // Clear container
+    qrReader.innerHTML = '';
+    html5Scanner = new Html5Qrcode('qrReader');
+
+    const config = {
+      fps: 15,
+      qrbox: { width: 240, height: 240 },
+      aspectRatio: 1.0,
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.QR_CODE,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.DATA_MATRIX
+      ],
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+    };
+
+    html5Scanner.start(
+      { facingMode: 'environment' }, // camera sau (back camera)
+      config,
+      onScanSuccess,
+      onScanError
+    ).then(() => {
+      qrStatus.textContent = '\u{1f4f7} H\u01b0\u1edbng camera v\u00e0o m\u00e3 QR / barcode...';
+    }).catch(err => {
+      if (err && err.toString().includes('Permission')) {
+        qrStatus.textContent = '\u274c Vui l\u00f2ng c\u1ea5p quy\u1ec1n camera cho trang web n\u00e0y.';
+      } else if (err && err.toString().includes('facingMode')) {
+        // Fallback: thử camera mặc định nếu không có back camera
+        html5Scanner.start(
+          { facingMode: 'user' },
+          config, onScanSuccess, onScanError
+        ).then(() => {
+          qrStatus.textContent = '\u{1f4f7} H\u01b0\u1edbng camera v\u00e0o m\u00e3 QR / barcode...';
+        }).catch(e2 => {
+          qrStatus.textContent = '\u274c Kh\u00f4ng th\u1ec3 m\u1edf camera: ' + e2;
+        });
+      } else {
+        qrStatus.textContent = '\u274c L\u1ed7i camera: ' + err;
+      }
+    });
+  }
+
+  function onScanSuccess(decodedText) {
+    // Làm sạch kết quả — VIN thường là 17 ký tự alphanumeric
+    const raw = decodedText.trim().toUpperCase();
+    // Nếu kết quả chứa VIN (17 ký tự liên tiếp), trích xuất
+    const vinMatch = raw.match(/[A-HJ-NPR-Z0-9]{17}/);
+    const vin = vinMatch ? vinMatch[0] : raw;
+
+    // Flash hiệu ứng thành công
+    const box = document.getElementById('qrBox');
+    box.classList.add('qr-success-flash');
+    setTimeout(() => box.classList.remove('qr-success-flash'), 350);
+
+    qrStatus.textContent = '\u2705 \u0110\u00e3 qu\u00e9t: ' + vin;
+
+    // Dừng scanner sau khi quét thành công
+    stopScanner();
+    setTimeout(() => {
+      qrModal.classList.remove('open');
+      document.body.style.overflow = '';
+
+      // Điền VIN vào input tương ứng và trigger lookup
+      if (activeTarget === 'inbound') {
+        const inp = document.getElementById('ibVin');
+        inp.value = vin;
+        inp.focus();
+        lookupVehicle(vin, 'inbound');
+      } else if (activeTarget === 'outbound') {
+        const inp = document.getElementById('obVin');
+        inp.value = vin;
+        inp.focus();
+        lookupVehicle(vin, 'outbound');
+      }
+    }, 400);
+  }
+
+  function onScanError(errorMessage) {
+    // Bỏ qua lỗi "no code found" — đây là bình thường khi chưa quét được
+    // Chỉ log lỗi thực sự
+    if (errorMessage && !errorMessage.includes('No MultiFormat Readers') &&
+        !errorMessage.includes('No barcode or QR code detected') &&
+        !errorMessage.includes('NotFoundException')) {
+      console.warn('QR scan error:', errorMessage);
+    }
+  }
+})();
+
+</body></html>

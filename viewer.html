@@ -65,6 +65,7 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
 .req-vin{font-weight:600;font-size:.87rem;margin-bottom:.2rem}
 .req-meta{font-size:.76rem;color:var(--mu)}
 .note-box{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:5px;padding:.45rem .6rem;font-size:.76rem;color:#fca5a5;margin-top:.35rem}
+<link rel='stylesheet' href='css/wms-animate.css'>
 </style></head><body><div class='app'>
 <div class='topbar'>
   <span class='topbar-title'>👁 TVBH — WMS</span>
@@ -105,6 +106,7 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
     <button class='btn btn-pr' id='btnReqSubmit'>✅ Gửi yêu cầu</button>
   </div></div></div>
 <div class='toast-wrap' id='toastWrap'></div>
+<script src='js/wms-ui.js'></script>
 <script src='js/api-client.js'></script>
 <script src='js/auth.js'></script>
 <script>
@@ -154,7 +156,8 @@ async function searchVehicles(page) {
   const search = document.getElementById('srSearch').value.trim();
   const warehouseStatus = document.getElementById('srStatus').value;
   if(!search && !warehouseStatus) {
-    document.getElementById('srResults').innerHTML = '<div class="empty-state"><div class="empty-icon">&#128663;</div><div>Nhập từ khóa để tìm xe</div></div>';
+    document.getElementById('srResults').innerHTML = '<div class="empty-state"><div class="empty-icon">&#128663;
+    UI.stagger(document.getElementById('srResults').querySelectorAll('.veh-card'),'anim-slide-up',35);</div><div>Nhập từ khóa để tìm xe</div></div>';
     document.getElementById('srPgn').innerHTML = '';
     return;
   }

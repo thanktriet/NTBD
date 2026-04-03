@@ -1,0 +1,589 @@
+/* ============================================================
+   wms-animate.css — WMS Animation System
+   Tất cả animations đều dùng transform + opacity (GPU-safe).
+   Không dùng width/height/top/left trong keyframes để tránh reflow.
+   ============================================================ */
+
+/* ── 0. Accessibility: tắt animation nếu user yêu cầu ───────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── 1. Timing tokens ────────────────────────────────────────── */
+:root {
+  --dur-instant : 80ms;
+  --dur-fast    : 150ms;
+  --dur-normal  : 250ms;
+  --dur-slow    : 380ms;
+  --dur-enter   : 320ms;
+
+  --ease-out    : cubic-bezier(0.22, 1, 0.36, 1);   /* overshoot soft */
+  --ease-spring : cubic-bezier(0.34, 1.56, 0.64, 1); /* spring pop */
+  --ease-in-out : cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-snap   : cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   2. @KEYFRAMES
+   ══════════════════════════════════════════════════════════════ */
+
+@keyframes wms-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes wms-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes wms-slide-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes wms-slide-down {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0);     }
+}
+
+@keyframes wms-slide-left {
+  from { opacity: 0; transform: translateX(18px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+
+@keyframes wms-slide-right {
+  from { opacity: 0; transform: translateX(-18px); }
+  to   { opacity: 1; transform: translateX(0);     }
+}
+
+@keyframes wms-pop {
+  0%   { opacity: 0; transform: scale(0.88); }
+  70%  { opacity: 1; transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+@keyframes wms-pop-sm {
+  0%   { opacity: 0; transform: scale(0.94); }
+  60%  { transform: scale(1.015); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes wms-collapse-out {
+  from { opacity: 1; transform: scaleY(1);   transform-origin: top; }
+  to   { opacity: 0; transform: scaleY(0.9); transform-origin: top; }
+}
+
+@keyframes wms-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-5px); }
+  40%       { transform: translateX(5px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(3px); }
+}
+
+@keyframes wms-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+@keyframes wms-ripple {
+  to { transform: scale(4); opacity: 0; }
+}
+
+@keyframes wms-tab-underline {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes wms-badge-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  75%  { transform: scale(1.1); }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+@keyframes wms-skeleton {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+@keyframes wms-check-draw {
+  from { stroke-dashoffset: 40; }
+  to   { stroke-dashoffset: 0;  }
+}
+
+@keyframes wms-toast-out {
+  to { opacity: 0; transform: translateX(110%); }
+}
+
+@keyframes wms-scan-beam {
+  0%   { transform: translateY(0%); }
+  100% { transform: translateY(calc(100% - 2px)); }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   3. UTILITY CLASSES
+   ══════════════════════════════════════════════════════════════ */
+
+/* Preset state — invisible but keeps layout space */
+.wms-hidden {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Show: applied by JS to trigger enter animation */
+.wms-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Enter animations (one-shot) */
+.anim-fade-in   { animation: wms-fade-in   var(--dur-normal) var(--ease-out) both; }
+.anim-slide-up  { animation: wms-slide-up  var(--dur-enter)  var(--ease-snap) both; }
+.anim-slide-down{ animation: wms-slide-down var(--dur-enter) var(--ease-snap) both; }
+.anim-slide-left{ animation: wms-slide-left var(--dur-enter) var(--ease-snap) both; }
+.anim-pop       { animation: wms-pop       var(--dur-enter)  var(--ease-spring) both; }
+.anim-pop-sm    { animation: wms-pop-sm    var(--dur-normal) var(--ease-spring) both; }
+
+/* Stagger delay helpers */
+.anim-d1  { animation-delay: 40ms;  }
+.anim-d2  { animation-delay: 80ms;  }
+.anim-d3  { animation-delay: 120ms; }
+.anim-d4  { animation-delay: 160ms; }
+.anim-d5  { animation-delay: 200ms; }
+.anim-d6  { animation-delay: 240ms; }
+.anim-d7  { animation-delay: 280ms; }
+.anim-d8  { animation-delay: 320ms; }
+
+/* ── Skeleton loader ─────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--sf2, #263248) 25%,
+    var(--sf,  #1e293b) 50%,
+    var(--sf2, #263248) 75%
+  );
+  background-size: 200% 100%;
+  animation: wms-skeleton 1.4s ease-in-out infinite;
+  border-radius: 6px;
+  color: transparent !important;
+  pointer-events: none;
+  user-select: none;
+}
+.skeleton * { visibility: hidden; }
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.skeleton-line.short { width: 55%; }
+.skeleton-line.medium{ width: 75%; }
+.skeleton-line.full  { width: 100%; }
+
+/* ── Ripple button effect ────────────────────────────────────── */
+.ripple-host {
+  position: relative;
+  overflow: hidden;
+}
+.ripple-wave {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.22);
+  width: 10px; height: 10px;
+  transform: scale(0);
+  animation: wms-ripple 500ms var(--ease-out) forwards;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   4. GLOBAL INTERACTIVE TRANSITIONS
+   ══════════════════════════════════════════════════════════════ */
+
+/* Buttons — press scale + color fade */
+.btn {
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    transform        var(--dur-instant) var(--ease-out),
+    box-shadow       var(--dur-fast) var(--ease-out),
+    opacity          var(--dur-fast) var(--ease-out);
+  will-change: transform;
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.95) translateY(1px);
+}
+.btn:hover:not(:disabled) {
+  box-shadow: 0 4px 14px rgba(99,102,241,0.22);
+  transform: translateY(-1px);
+}
+.btn:disabled {
+  transition: opacity var(--dur-fast);
+}
+
+/* Inputs — border glow */
+input, select, textarea {
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow   var(--dur-fast) var(--ease-out),
+    background   var(--dur-fast);
+}
+input:focus, select:focus, textarea:focus {
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.18);
+}
+
+/* Cards — hover lift */
+.card {
+  transition:
+    box-shadow var(--dur-normal) var(--ease-out),
+    transform  var(--dur-normal) var(--ease-out);
+}
+.card:hover {
+  box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+  transform: translateY(-1px);
+}
+
+/* Nav / tab items */
+.nav-item, .tab-btn {
+  transition:
+    color            var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    border-color     var(--dur-fast) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Tab active underline animate */
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--ac, #6366f1);
+  transform-origin: left;
+  animation: wms-tab-underline var(--dur-normal) var(--ease-snap) both;
+}
+
+/* Badge pop-in */
+.bs {
+  animation: wms-badge-pop var(--dur-normal) var(--ease-spring) both;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   5. PANEL TRANSITIONS (show/hide via JS classes)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Any panel managed by UI.show / UI.hide */
+.wms-panel {
+  transition:
+    opacity   var(--dur-normal) var(--ease-out),
+    transform var(--dur-normal) var(--ease-snap);
+  transform-origin: top center;
+}
+.wms-panel.wms-hidden {
+  opacity: 0;
+  transform: translateY(6px) scale(0.99);
+  pointer-events: none;
+}
+.wms-panel.wms-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   6. MODAL TRANSITIONS
+   ══════════════════════════════════════════════════════════════ */
+
+.modal-ov {
+  transition: opacity var(--dur-normal) var(--ease-out);
+  opacity: 0;
+  display: flex !important; /* always in DOM, controlled by opacity */
+  pointer-events: none;
+}
+.modal-ov.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal {
+  transition:
+    transform var(--dur-enter)  var(--ease-spring),
+    opacity   var(--dur-normal) var(--ease-out);
+  transform: scale(0.92) translateY(10px);
+  opacity: 0;
+}
+.modal-ov.open .modal {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   7. TOAST — slide in from right, slide out right
+   ══════════════════════════════════════════════════════════════ */
+
+.toast {
+  animation: wms-slide-left var(--dur-normal) var(--ease-snap) both;
+  position: relative;
+}
+.toast.wms-toast-exit {
+  animation: wms-toast-out var(--dur-fast) var(--ease-in-out) forwards;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   8. TAB PANE TRANSITIONS
+   ══════════════════════════════════════════════════════════════ */
+
+.tab-pane {
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+  /* display: none kept for layout; animation managed by JS class toggling */
+}
+.tab-pane.active {
+  display: block !important;
+  animation: wms-slide-up var(--dur-normal) var(--ease-snap) forwards;
+  pointer-events: auto;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   9. FORM / VALIDATION
+   ══════════════════════════════════════════════════════════════ */
+
+.wms-shake {
+  animation: wms-shake var(--dur-slow) var(--ease-out);
+}
+
+/* Error message reveal */
+.err-txt, .note-box {
+  animation: wms-slide-down var(--dur-normal) var(--ease-snap) both;
+}
+
+/* Input error state */
+input.wms-error, select.wms-error, textarea.wms-error {
+  border-color: var(--re, #ef4444) !important;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.15) !important;
+  animation: wms-shake var(--dur-slow) var(--ease-out);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   10. DROP ZONE
+   ══════════════════════════════════════════════════════════════ */
+
+.drop-zone {
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background   var(--dur-fast) var(--ease-out),
+    transform    var(--dur-fast) var(--ease-out);
+}
+.drop-zone:hover, .drop-zone.dov {
+  transform: scale(1.01);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   11. TABLE ROWS — stagger on render
+   ══════════════════════════════════════════════════════════════ */
+
+.wms-tbl-row {
+  animation: wms-slide-up var(--dur-normal) var(--ease-snap) both;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   12. IMPORT PREVIEW CHIPS
+   ══════════════════════════════════════════════════════════════ */
+
+.ps-chip {
+  animation: wms-pop-sm var(--dur-normal) var(--ease-spring) both;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   13. PAGE ENTRANCE — apply on <body> or .app
+   ══════════════════════════════════════════════════════════════ */
+
+.wms-page-enter {
+  animation: wms-fade-in var(--dur-slow) var(--ease-out) both;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   14. TOPBAR subtle drop shadow on scroll
+   ══════════════════════════════════════════════════════════════ */
+
+.topbar, .s-nav, .sidebar {
+  transition: box-shadow var(--dur-normal) var(--ease-out);
+}
+.topbar.scrolled {
+  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   15. SCAN INPUT — pulse border while waiting for scan
+   ══════════════════════════════════════════════════════════════ */
+
+.scan-input.scanning {
+  border-color: var(--ac, #6366f1) !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.2) !important;
+  animation: wms-pulse 1.8s var(--ease-in-out) infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   16. QR SCANNER ENHANCEMENTS
+   ══════════════════════════════════════════════════════════════ */
+
+.qr-btn {
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform  var(--dur-fast) var(--ease-spring);
+}
+.qr-btn:hover  { transform: scale(1.08); }
+.qr-btn:active { transform: scale(0.93); }
+
+.qr-modal {
+  transition: opacity var(--dur-normal) var(--ease-out);
+  opacity: 0;
+  display: flex !important;
+  pointer-events: none;
+}
+.qr-modal.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.qr-box {
+  transition: transform var(--dur-enter) var(--ease-spring);
+  transform: scale(0.88);
+}
+.qr-modal.open .qr-box {
+  transform: scale(1);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   17. VEHICLE INFO CARD
+   ══════════════════════════════════════════════════════════════ */
+
+.vehicle-info {
+  animation: wms-slide-up var(--dur-enter) var(--ease-snap) both;
+}
+.vi-row {
+  animation: wms-slide-right var(--dur-normal) var(--ease-snap) both;
+}
+.vi-row:nth-child(1) { animation-delay: 0ms;   }
+.vi-row:nth-child(2) { animation-delay: 40ms;  }
+.vi-row:nth-child(3) { animation-delay: 80ms;  }
+.vi-row:nth-child(4) { animation-delay: 120ms; }
+.vi-row:nth-child(5) { animation-delay: 160ms; }
+.vi-row:nth-child(6) { animation-delay: 200ms; }
+
+/* ══════════════════════════════════════════════════════════════
+   18. IMAGE SLOTS
+   ══════════════════════════════════════════════════════════════ */
+
+.img-slot {
+  transition:
+    transform  var(--dur-fast) var(--ease-spring),
+    box-shadow var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast);
+  animation: wms-pop-sm var(--dur-normal) var(--ease-spring) both;
+}
+.img-slot:hover {
+  transform: scale(1.04);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.img-slot .rm {
+  transition: opacity var(--dur-fast), transform var(--dur-fast) var(--ease-spring);
+  opacity: 0;
+  transform: scale(0.7);
+}
+.img-slot:hover .rm {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   19. VEHICLE LIST / SEARCH CARDS (viewer.html)
+   ══════════════════════════════════════════════════════════════ */
+
+.veh-card, .req-card {
+  animation: wms-slide-up var(--dur-normal) var(--ease-snap) both;
+  transition:
+    transform  var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.veh-card:hover, .req-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   20. STATUS BAR / TOPBAR LOGOUT BUTTON
+   ══════════════════════════════════════════════════════════════ */
+
+#btnLogout {
+  transition: background var(--dur-fast), transform var(--dur-fast) var(--ease-spring);
+}
+#btnLogout:hover  { transform: rotate(8deg) scale(1.08); }
+#btnLogout:active { transform: rotate(0deg) scale(0.92); }
+
+/* ══════════════════════════════════════════════════════════════
+   21. LOGIN PAGE — card float animation
+   ══════════════════════════════════════════════════════════════ */
+
+.card.login-card {
+  animation: wms-slide-up var(--dur-slow) var(--ease-spring) both;
+}
+.logo {
+  animation: wms-pop var(--dur-slow) var(--ease-spring) both;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   22. SPINNER UPGRADE — smoother
+   ══════════════════════════════════════════════════════════════ */
+
+.spin {
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: sp var(--dur-slow) linear infinite !important;
+}
+@keyframes sp { to { transform: rotate(360deg); } }
+
+/* ══════════════════════════════════════════════════════════════
+   23. ADMIN SIDEBAR NAV ITEM
+   ══════════════════════════════════════════════════════════════ */
+
+.nav-item {
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color      var(--dur-fast),
+    transform  var(--dur-fast) var(--ease-out);
+}
+.nav-item:hover:not(.active) {
+  transform: translateX(3px);
+}
+.nav-item.active {
+  animation: wms-slide-right var(--dur-normal) var(--ease-snap) both;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   24. PAGINATION BUTTONS
+   ══════════════════════════════════════════════════════════════ */
+
+.pb {
+  transition:
+    background  var(--dur-fast),
+    border-color var(--dur-fast),
+    color       var(--dur-fast),
+    transform   var(--dur-instant) var(--ease-out);
+}
+.pb:hover:not(:disabled) { transform: scale(1.1); }
+.pb:active               { transform: scale(0.92); }
+
+/* ══════════════════════════════════════════════════════════════
+   25. SUBMIT BUTTON SUCCESS FLASH
+   ══════════════════════════════════════════════════════════════ */
+
+.btn.wms-success-flash {
+  animation: wms-pulse 0.4s ease 2;
+  background: var(--gr, #22c55e) !important;
+}
