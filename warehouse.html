@@ -1,0 +1,452 @@
+<!DOCTYPE html><html lang='vi'><head><meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1.0'>
+<title>WMS — Thủ Kho</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f172a;--sf:#1e293b;--sf2:#263248;--bd:#334155;--tx:#f8fafc;--mu:#94a3b8;--ac:#6366f1;--gr:#22c55e;--ye:#f59e0b;--re:#ef4444}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-size:15px}
+.app{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.topbar{padding:.75rem 1rem;background:var(--sf);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-title{font-weight:700;font-size:1rem}
+.topbar-user{font-size:.78rem;color:var(--mu)}
+.tab-bar{display:flex;background:var(--sf);border-bottom:1px solid var(--bd)}
+.tab-btn{flex:1;padding:.7rem;text-align:center;cursor:pointer;font-size:.85rem;color:var(--mu);border-bottom:2px solid transparent;transition:all .15s}
+.tab-btn.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:600}
+.tab-pane{display:none;flex:1}.tab-pane.active{display:block}
+.content{padding:1rem}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:1rem;margin-bottom:.875rem}
+.card-title{font-weight:600;font-size:.9rem;margin-bottom:.75rem}
+.scan-area{position:relative}
+.scan-input{width:100%;padding:.75rem 1rem;background:var(--bg);border:2px solid var(--bd);border-radius:8px;color:var(--tx);font-size:1rem;outline:none;text-align:center;font-weight:600;letter-spacing:.05em}
+.scan-input:focus{border-color:var(--ac)}
+.scan-hint{text-align:center;font-size:.75rem;color:var(--mu);margin-top:.35rem}
+.vehicle-info{background:var(--sf2);border-radius:8px;padding:.875rem;margin-top:.75rem}
+.vi-row{display:flex;justify-content:space-between;align-items:center;padding:.3rem 0;border-bottom:1px solid var(--bd);font-size:.85rem}
+.vi-row:last-child{border-bottom:none}
+.vi-label{color:var(--mu);font-size:.78rem}
+.vi-val{font-weight:500}
+.loc-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem}
+.fg{margin-bottom:0}
+.fg label{display:block;font-size:.76rem;color:var(--mu);margin-bottom:.25rem}
+.fg select,.fg input{width:100%;padding:.5rem .65rem;background:var(--bg);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:.9rem;outline:none}
+.fg select:focus,.fg input:focus{border-color:var(--ac)}
+.fg select option{background:var(--sf)}
+.img-upload-area{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem;margin-bottom:.75rem}
+.img-slot{aspect-ratio:1;border:1px dashed var(--bd);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;position:relative;background:var(--bg);font-size:.7rem;color:var(--mu)}
+.img-slot img{width:100%;height:100%;object-fit:cover}
+.img-slot .rm{position:absolute;top:2px;right:2px;background:var(--re);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:.65rem;cursor:pointer;display:none;align-items:center;justify-content:center;line-height:1}
+.img-slot:hover .rm{display:flex}
+.img-slot .add-icon{font-size:1.3rem;color:var(--mu)}
+.img-count{font-size:.75rem;color:var(--mu);margin-bottom:.5rem}
+.btn{display:flex;align-items:center;justify-content:center;gap:.35rem;width:100%;padding:.7rem;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:600;transition:all .15s}
+.btn-pr{background:var(--ac);color:#fff}.btn-pr:hover:not(:disabled){background:#4f46e5}
+.btn-ok{background:var(--gr);color:#fff}.btn-ok:hover:not(:disabled){background:#16a34a}
+.btn-ng{background:var(--re);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-sec{background:var(--sf2);border:1px solid var(--bd);color:var(--tx)}
+.fg2 label{display:block;font-size:.78rem;color:var(--mu);margin-bottom:.28rem}
+.fg2 input,.fg2 textarea{width:100%;padding:.55rem .7rem;background:var(--bg);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:.9rem;outline:none;margin-bottom:.65rem}
+.fg2 input:focus,.fg2 textarea:focus{border-color:var(--ac)}
+.bs{display:inline-block;padding:.2rem .55rem;border-radius:4px;font-size:.72rem;font-weight:600}
+.bs-vt{background:rgba(245,158,11,.15);color:#f59e0b}
+.bs-dv{background:rgba(34,197,94,.15);color:#22c55e}
+.bs-dx{background:rgba(99,102,241,.15);color:#818cf8}
+.toast-wrap{position:fixed;top:1rem;right:1rem;z-index:999;display:flex;flex-direction:column;gap:.4rem}
+.toast{padding:.55rem .9rem;border-radius:8px;font-size:.82rem;font-weight:500;min-width:220px;box-shadow:0 4px 12px rgba(0,0,0,.3);animation:tsi .2s ease}
+.t-ok{background:#166534;color:#fff}.t-err{background:#991b1b;color:#fff}.t-inf{background:#1e3a8a;color:#fff}
+@keyframes tsi{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .65s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:2.5rem 1rem;color:var(--mu)}
+.empty-icon{font-size:2.5rem;margin-bottom:.5rem}
+</style></head><body>
+<div class='app'>
+<div class='topbar'><span class='topbar-title'>🏭 Thủ Kho WMS</span><span class='topbar-user' id='topUser'></span></div>
+<div class='tab-bar'>
+  <div class='tab-btn active' data-tab='inbound'>📥 Nhập xe</div>
+  <div class='tab-btn' data-tab='outbound'>🚚 Xuất xe</div>
+  <div class='tab-btn' data-tab='inventory'>📋 Tồn kho</div>
+</div>
+<!-- TAB: INBOUND -->
+<div class='tab-pane active' id='tab-inbound'>
+  <div class='content'>
+    <div class='card'>
+      <div class='card-title'>&#128229; Nh&#7853;p kho theo VIN</div>
+      <div class='scan-area'>
+        <input class='scan-input' id='ibVin' placeholder='Qu&#233;t QR ho&#7863;c nh&#7853;p VIN...' maxlength='17'>
+        <div class='scan-hint'>&#128247; Nh&#7845;n Enter ho&#7863;c qu&#233;t QR &#273;&#7875; t&#236;m xe</div>
+      </div>
+      <div id='ibVehicleInfo' style='display:none'></div>
+    </div>
+    <div class='card' id='ibLocationCard' style='display:none'>
+      <div class='card-title'>&#128205; Ch&#7885;n v&#7883; tr&#237; kho</div>
+      <div class='loc-grid'>
+        <div class='fg'><label>Kho *</label><select id='ibWh'><option value=''>-- Ch&#7885;n kho --</option></select></div>
+        <div class='fg'><label>Khu *</label><select id='ibZone'><option value=''>-- Ch&#7885;n khu --</option></select></div>
+        <div class='fg'><label>D&#227;y *</label><select id='ibRow'><option value=''>-- Ch&#7885;n d&#227;y --</option></select></div>
+        <div class='fg'><label>&#212; *</label><select id='ibSlot'><option value=''>-- Ch&#7885;n &#244; --</option></select></div>
+      </div>
+      <div style='font-size:.75rem;color:var(--mu);margin-bottom:.75rem' id='ibLocStatus'></div>
+    </div>
+    <div class='card' id='ibPhotoCard' style='display:none'>
+      <div class='card-title'>&#128247; &#7842;nh ki&#7875;m tra (t&#7889;i &#273;a 10 t&#7845;m)</div>
+      <div class='img-count' id='ibImgCount'>0 / 10 &#7843;nh</div>
+      <div class='img-upload-area' id='ibImgGrid'></div>
+      <input type='file' id='ibFileInput' accept='image/*' multiple style='display:none'>
+    </div>
+    <button class='btn btn-ok' id='btnIbSubmit' style='display:none' disabled>
+      &#9989; X&#225;c nh&#7853;n nh&#7853;p kho
+    </button>
+  </div>
+</div>
+
+<!-- TAB: OUTBOUND -->
+<div class='tab-pane' id='tab-outbound'>
+  <div class='content'>
+    <div class='card'>
+      <div class='card-title'>&#128666; Xu&#7845;t kho theo VIN</div>
+      <div class='scan-area'>
+        <input class='scan-input' id='obVin' placeholder='Qu&#233;t QR ho&#7863;c nh&#7853;p VIN...' maxlength='17'>
+        <div class='scan-hint'>&#128247; Nh&#7845;n Enter ho&#7863;c qu&#233;t QR &#273;&#7875; t&#236;m xe</div>
+      </div>
+      <div id='obVehicleInfo' style='display:none'></div>
+    </div>
+    <div class='card' id='obFormCard' style='display:none'>
+      <div class='card-title'>&#128196; Th&#244;ng tin xu&#7845;t kho</div>
+      <div class='fg2'>
+        <label>Ng&#432;&#7901;i giao xe *</label>
+        <input id='obDeliverer' placeholder='H&#7885; t&#234;n ng&#432;&#7901;i giao...'>
+        <label>Ghi ch&#250;</label>
+        <textarea id='obNote' rows='2' placeholder='Ghi ch&#250; th&#234;m (n&#7871;u c&#243;)...'></textarea>
+      </div>
+      <div class='card-title' style='margin-top:.25rem'>&#128247; &#7842;nh gi&#7845;y x&#225;c nh&#7853;n GDKD</div>
+      <div class='img-count' id='obImgCount'>0 / 3 &#7843;nh</div>
+      <div class='img-upload-area' id='obImgGrid' style='grid-template-columns:repeat(3,1fr)'></div>
+      <input type='file' id='obFileInput' accept='image/*' multiple style='display:none'>
+    </div>
+    <button class='btn btn-ng' id='btnObSubmit' style='display:none' disabled>
+      &#128666; X&#225;c nh&#7853;n xu&#7845;t kho
+    </button>
+  </div>
+</div>
+
+<!-- TAB: INVENTORY -->
+<div class='tab-pane' id='tab-inventory'>
+  <div class='content'>
+    <div class='card'>
+      <div class='fg'><label>T&#236;m ki&#7871;m</label>
+        <input id='invSearch' placeholder='VIN, model, v&#7883; tr&#237;...' style='margin-bottom:.6rem'>
+      </div>
+      <div id='invList'><div class='empty-state'><div class='empty-icon'>&#128663;</div><div>&#272;ang t&#7843;i...</div></div></div>
+    </div>
+  </div>
+</div>
+</div><!-- /app -->
+<div class='toast-wrap' id='toastWrap'></div>
+<script src='js/api-client.js'></script>
+<script src='js/auth.js'></script>
+<script src='js/drive-upload.js'></script>
+<script>
+const _user = AUTH.requireRole('warehouse');
+if(_user) document.getElementById('topUser').textContent = _user.fullName || _user.username;
+
+// ---- TABS ----
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    if(tab === 'inventory') loadInventory();
+  });
+});
+
+// ---- TOAST ----
+function showToast(msg, type) {
+  type = type || 'success';
+  const wrap = document.getElementById('toastWrap');
+  const d = document.createElement('div');
+  d.className = 'toast ' + (type === 'success' ? 't-ok' : type === 'error' ? 't-err' : 't-inf');
+  d.textContent = msg;
+  wrap.appendChild(d);
+  setTimeout(() => d.remove(), 3500);
+}
+
+function statusBadge(s) {
+  const map = {'V\u1eacN T\u1ea2I':'bs-vt','\u0110\u00c3 V\u1ec0':'bs-dv','\u0110\u00c3 XU\u1ea4T':'bs-dx'};
+  return '<span class="bs ' + (map[s]||'bs-dv') + '">' + (s||'') + '</span>';
+}
+
+// ---- IMAGE HELPER ----
+function makeImgGrid(containerId, inputId, maxPhotos, photos) {
+  const grid = document.getElementById(containerId);
+  const input = document.getElementById(inputId);
+  grid.innerHTML = '';
+  photos.forEach((p, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'img-slot';
+    slot.innerHTML = '<img src="' + p.preview + '" alt="photo"><button class="rm" data-i="' + i + '">&times;</button>';
+    slot.querySelector('.rm').onclick = (e) => { e.stopPropagation(); photos.splice(i,1); makeImgGrid(containerId, inputId, maxPhotos, photos); updateImgCount(containerId, inputId, maxPhotos, photos); };
+    grid.appendChild(slot);
+  });
+  if(photos.length < maxPhotos) {
+    const add = document.createElement('div');
+    add.className = 'img-slot';
+    add.innerHTML = '<span class="add-icon">+</span>';
+    add.onclick = () => { input.value=''; input.click(); };
+    grid.appendChild(add);
+  }
+}
+
+function updateImgCount(countId, inputId, maxPhotos, photos) {
+  document.getElementById(countId).textContent = photos.length + ' / ' + maxPhotos + ' \u1ea3nh';
+}
+
+// ---- INBOUND ----
+let ibPhotos = [], ibVehicleData = null, ibWarehouses = [];
+
+const ibVinInput = document.getElementById('ibVin');
+ibVinInput.addEventListener('keydown', async e => {
+  if(e.key === 'Enter') {
+    const vin = ibVinInput.value.trim().toUpperCase();
+    if(!vin) return;
+    await lookupVehicle(vin, 'inbound');
+  }
+});
+
+async function lookupVehicle(vin, mode) {
+  const infoEl = document.getElementById(mode === 'inbound' ? 'ibVehicleInfo' : 'obVehicleInfo');
+  infoEl.style.display = 'none';
+  try {
+    const res = await API.vehicles.getByVin(vin);
+    if(!res.success || !res.data) { showToast('Kh\u00f4ng t\u00ecm th\u1ea5y xe: ' + vin, 'error'); return; }
+    const v = res.data;
+    if(mode === 'inbound') {
+      if(v.WAREHOUSE_STATUS !== 'V\u1eacN T\u1ea2I') { showToast('Xe kh\u00f4ng \u1edf tr\u1ea1ng th\u00e1i V\u1eacN T\u1ea2I! Hi\u1ec7n t\u1ea1i: ' + v.WAREHOUSE_STATUS, 'error'); return; }
+      ibVehicleData = v;
+      renderVehicleInfo(v, 'ibVehicleInfo');
+      infoEl.style.display = 'block';
+      document.getElementById('ibLocationCard').style.display = 'block';
+      document.getElementById('ibPhotoCard').style.display = 'block';
+      document.getElementById('btnIbSubmit').style.display = 'flex';
+      ibPhotos = [];
+      makeImgGrid('ibImgGrid', 'ibFileInput', 10, ibPhotos);
+      updateImgCount('ibImgCount', 'ibFileInput', 10, ibPhotos);
+      await loadWarehouseOptions();
+    } else {
+      if(v.WAREHOUSE_STATUS !== '\u0110\u00c3 V\u1ec0') { showToast('Xe kh\u00f4ng \u1edf tr\u1ea1ng th\u00e1i \u0110\u00c3 V\u1ec0! Hi\u1ec7n t\u1ea1i: ' + v.WAREHOUSE_STATUS, 'error'); return; }
+      obVehicleData = v;
+      renderVehicleInfo(v, 'obVehicleInfo');
+      infoEl.style.display = 'block';
+      document.getElementById('obFormCard').style.display = 'block';
+      document.getElementById('btnObSubmit').style.display = 'flex';
+      obPhotos = [];
+      makeImgGrid('obImgGrid', 'obFileInput', 3, obPhotos);
+      updateImgCount('obImgCount', 'obFileInput', 3, obPhotos);
+    }
+    updateSubmitBtn(mode);
+  } catch(err) { showToast('L\u1ed7i: ' + err.message, 'error'); }
+}
+
+function renderVehicleInfo(v, elId) {
+  const el = document.getElementById(elId);
+  el.innerHTML = '<div class="vehicle-info">' +
+    '<div class="vi-row"><span class="vi-label">S\u1ed1 VIN</span><span class="vi-val"><b>' + v.VIN + '</b></span></div>' +
+    '<div class="vi-row"><span class="vi-label">Model</span><span class="vi-val">' + (v.MODEL||'') + '</span></div>' +
+    '<div class="vi-row"><span class="vi-label">M\u00e0u</span><span class="vi-val">' + (v.COLOR||'') + '</span></div>' +
+    '<div class="vi-row"><span class="vi-label">Phi\u00ean b\u1ea3n</span><span class="vi-val">' + (v.VERSION||'') + '</span></div>' +
+    '<div class="vi-row"><span class="vi-label">N\u0103m</span><span class="vi-val">' + (v.YEAR||'') + '</span></div>' +
+    '<div class="vi-row"><span class="vi-label">Tr\u1ea1ng th\u00e1i</span><span class="vi-val">' + statusBadge(v.WAREHOUSE_STATUS) + '</span></div>' +
+    '</div>';
+}
+async function loadWarehouseOptions() {
+  try {
+    const res = await API.warehouses.list();
+    if(!res.success) return;
+    ibWarehouses = res.data || [];
+    const sel = document.getElementById('ibWh');
+    sel.innerHTML = '<option value="">-- Ch\u1ecdn kho --</option>' + ibWarehouses.map(w => '<option value="' + w.ID + '">' + w.NAME + '</option>').join('');
+  } catch(e) {}
+}
+
+document.getElementById('ibWh').onchange = async function() {
+  const whId = this.value;
+  ['ibZone','ibRow','ibSlot'].forEach(id => { document.getElementById(id).innerHTML = '<option value="">--</option>'; });
+  if(!whId) return;
+  try {
+    const res = await API.locations.getZones(whId);
+    if(res.success) {
+      document.getElementById('ibZone').innerHTML = '<option value="">-- Ch\u1ecdn khu --</option>' + (res.data||[]).map(z => '<option value="' + z + '">' + z + '</option>').join('');
+    }
+  } catch(e) {}
+  updateSubmitBtn('inbound');
+};
+document.getElementById('ibZone').onchange = async function() {
+  const whId = document.getElementById('ibWh').value;
+  const zone = this.value;
+  document.getElementById('ibRow').innerHTML = '<option value="">-- Ch\u1ecdn d\u00e3y --</option>';
+  document.getElementById('ibSlot').innerHTML = '<option value="">-- Ch\u1ecdn \u00f4 --</option>';
+  if(!whId || !zone) return;
+  try {
+    const res = await API.locations.getRows(whId, zone);
+    if(res.success) document.getElementById('ibRow').innerHTML = '<option value="">-- Ch\u1ecdn d\u00e3y --</option>' + (res.data||[]).map(r => '<option value="' + r + '">' + r + '</option>').join('');
+  } catch(e) {}
+};
+document.getElementById('ibRow').onchange = async function() {
+  const whId = document.getElementById('ibWh').value;
+  const zone = document.getElementById('ibZone').value;
+  const row = this.value;
+  document.getElementById('ibSlot').innerHTML = '<option value="">-- Ch\u1ecdn \u00f4 --</option>';
+  if(!whId || !zone || !row) return;
+  try {
+    const res = await API.locations.getAvailableSlots(whId, zone, row);
+    if(res.success) document.getElementById('ibSlot').innerHTML = '<option value="">-- Ch\u1ecdn \u00f4 --</option>' + (res.data||[]).map(s => '<option value="' + s.id + '"' + (s.occupied?' disabled':'') + '>' + s.id + (s.occupied?' (\u0111\u00e3 c\u00f3 xe)':'') + '</option>').join('');
+  } catch(e) {}
+  updateSubmitBtn('inbound');
+};
+document.getElementById('ibSlot').onchange = () => updateSubmitBtn('inbound');
+
+document.getElementById('ibFileInput').onchange = function(e) {
+  const files = Array.from(e.target.files);
+  const remaining = 10 - ibPhotos.length;
+  files.slice(0, remaining).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      ibPhotos.push({file, preview: ev.target.result});
+      makeImgGrid('ibImgGrid', 'ibFileInput', 10, ibPhotos);
+      updateImgCount('ibImgCount', 'ibFileInput', 10, ibPhotos);
+    };
+    reader.readAsDataURL(file);
+  });
+  if(files.length > remaining) showToast('Ch\u1ec9 th\u00eam \u0111\u01b0\u1ee3c ' + remaining + ' \u1ea3nh n\u1eefa', 'info');
+};
+
+function updateSubmitBtn(mode) {
+  if(mode === 'inbound') {
+    const btn = document.getElementById('btnIbSubmit');
+    const hasVin = ibVehicleData !== null;
+    const hasLoc = document.getElementById('ibWh').value && document.getElementById('ibZone').value && document.getElementById('ibRow').value && document.getElementById('ibSlot').value;
+    btn.disabled = !(hasVin && hasLoc);
+  } else {
+    const btn = document.getElementById('btnObSubmit');
+    const hasVin = obVehicleData !== null;
+    const hasDeliverer = document.getElementById('obDeliverer').value.trim().length > 0;
+    btn.disabled = !(hasVin && hasDeliverer);
+  }
+}
+
+document.getElementById('btnIbSubmit').onclick = async function() {
+  const wh = document.getElementById('ibWh').value;
+  const zone = document.getElementById('ibZone').value;
+  const row = document.getElementById('ibRow').value;
+  const slot = document.getElementById('ibSlot').value;
+  if(!ibVehicleData || !wh || !zone || !row || !slot) { showToast('Vui l\u00f2ng \u0111i\u1ec1n \u0111\u1ee7 th\u00f4ng tin', 'error'); return; }
+  this.disabled = true;
+  this.innerHTML = '<span class="spin"></span> \u0110ang x\u1eed l\u00fd...';
+  try {
+    showToast('\u23f3 \u0110ang upload \u1ea3nh...', 'info');
+    const photoUrls = await DRIVE.uploadMultiple(ibPhotos.map(p => p.file), ibVehicleData.VIN, 'INBOUND');
+    const res = await API.warehouse.inbound({
+      vin: ibVehicleData.VIN,
+      warehouseId: wh, zone, row, slot,
+      photos: photoUrls,
+      performedBy: _user.username
+    });
+    if(res.success) {
+      showToast('\u2705 Nh\u1eadp kho th\u00e0nh c\u00f4ng! ' + ibVehicleData.VIN + ' \u2192 ' + wh + '/' + zone + '/' + row + '/' + slot);
+      ibVehicleData = null; ibPhotos = [];
+      document.getElementById('ibVin').value = '';
+      document.getElementById('ibVehicleInfo').style.display = 'none';
+      document.getElementById('ibLocationCard').style.display = 'none';
+      document.getElementById('ibPhotoCard').style.display = 'none';
+      document.getElementById('btnIbSubmit').style.display = 'none';
+    } else { showToast(res.message, 'error'); }
+  } catch(e) { showToast('L\u1ed7i: ' + e.message, 'error'); }
+  this.disabled = false;
+  this.innerHTML = '\u2705 X\u00e1c nh\u1eadn nh\u1eadp kho';
+};
+// ---- OUTBOUND ----
+let obPhotos = [], obVehicleData = null;
+
+const obVinInput = document.getElementById('obVin');
+obVinInput.addEventListener('keydown', async e => {
+  if(e.key === 'Enter') {
+    const vin = obVinInput.value.trim().toUpperCase();
+    if(vin) await lookupVehicle(vin, 'outbound');
+  }
+});
+
+document.getElementById('obDeliverer').oninput = () => updateSubmitBtn('outbound');
+
+document.getElementById('obFileInput').onchange = function(e) {
+  const files = Array.from(e.target.files);
+  const remaining = 3 - obPhotos.length;
+  files.slice(0, remaining).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      obPhotos.push({file, preview: ev.target.result});
+      makeImgGrid('obImgGrid', 'obFileInput', 3, obPhotos);
+      updateImgCount('obImgCount', 'obFileInput', 3, obPhotos);
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+document.getElementById('btnObSubmit').onclick = async function() {
+  const deliverer = document.getElementById('obDeliverer').value.trim();
+  const note = document.getElementById('obNote').value.trim();
+  if(!obVehicleData || !deliverer) { showToast('Vui l\u00f2ng nh\u1eadp ng\u01b0\u1eddi giao xe', 'error'); return; }
+  this.disabled = true;
+  this.innerHTML = '<span class="spin"></span> \u0110ang x\u1eed l\u00fd...';
+  try {
+    showToast('\u23f3 \u0110ang upload \u1ea3nh...', 'info');
+    const photoUrls = obPhotos.length ? await DRIVE.uploadMultiple(obPhotos.map(p => p.file), obVehicleData.VIN, 'OUTBOUND') : [];
+    const res = await API.warehouse.outbound({
+      vin: obVehicleData.VIN,
+      deliverer, note,
+      photos: photoUrls,
+      performedBy: _user.username
+    });
+    if(res.success) {
+      showToast('\u2705 Xu\u1ea5t kho th\u00e0nh c\u00f4ng! ' + obVehicleData.VIN);
+      obVehicleData = null; obPhotos = [];
+      document.getElementById('obVin').value = '';
+      document.getElementById('obVehicleInfo').style.display = 'none';
+      document.getElementById('obFormCard').style.display = 'none';
+      document.getElementById('btnObSubmit').style.display = 'none';
+      document.getElementById('obDeliverer').value = '';
+      document.getElementById('obNote').value = '';
+    } else { showToast(res.message, 'error'); }
+  } catch(e) { showToast('L\u1ed7i: ' + e.message, 'error'); }
+  this.disabled = false;
+  this.innerHTML = '\u{1f69a} X\u00e1c nh\u1eadn xu\u1ea5t kho';
+};
+
+// ---- INVENTORY ----
+let invDebounce;
+document.getElementById('invSearch').oninput = () => { clearTimeout(invDebounce); invDebounce = setTimeout(loadInventory, 400); };
+
+async function loadInventory() {
+  const search = document.getElementById('invSearch').value.trim();
+  const el = document.getElementById('invList');
+  el.innerHTML = '<div class="empty-state"><div class="empty-icon">\u23f3</div><div>\u0110ang t\u1ea3i...</div></div>';
+  try {
+    const res = await API.vehicles.list({warehouseStatus:'\u0110\u00c3 V\u1ec0', search, pageSize:50});
+    if(!res.success) { showToast(res.message, 'error'); return; }
+    const {items} = res.data;
+    if(!items.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">\u{1f697}</div><div>Kh\u00f4ng c\u00f3 xe trong kho</div></div>';
+      return;
+    }
+    el.innerHTML = items.map(v =>
+      '<div class="vehicle-info" style="margin-bottom:.6rem">' +
+      '<div class="vi-row"><span class="vi-label">VIN</span><span class="vi-val"><b>' + v.VIN + '</b></span></div>' +
+      '<div class="vi-row"><span class="vi-label">Model / M\u00e0u</span><span class="vi-val">' + (v.MODEL||'') + ' \u2022 ' + (v.COLOR||'') + '</span></div>' +
+      '<div class="vi-row"><span class="vi-label">V\u1ecb tr\u00ed</span><span class="vi-val">' + (v.LOCATION ? v.LOCATION.warehouseId+'/'+v.LOCATION.zone+'/'+v.LOCATION.row+'/'+v.LOCATION.slot : '&mdash;') + '</span></div>' +
+      '<div class="vi-row"><span class="vi-label">Ng\u00e0y v\u00e0o kho</span><span class="vi-val">' + (v.INBOUND_AT||'&mdash;') + '</span></div>' +
+      '</div>'
+    ).join('');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+</script></body></html>

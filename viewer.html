@@ -1,0 +1,237 @@
+<!DOCTYPE html><html lang='vi'><head><meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1.0'>
+<title>WMS — TVBH</title><style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f172a;--sf:#1e293b;--sf2:#263248;--bd:#334155;--tx:#f8fafc;--mu:#94a3b8;--ac:#6366f1;--gr:#22c55e;--ye:#f59e0b;--re:#ef4444}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-size:14px}
+.app{max-width:600px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.topbar{padding:.75rem 1rem;background:var(--sf);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-title{font-weight:700;font-size:1rem}
+.topbar-user{font-size:.78rem;color:var(--mu);display:flex;align-items:center;gap:.5rem}
+.tab-bar{display:flex;background:var(--sf);border-bottom:1px solid var(--bd)}
+.tab-btn{flex:1;padding:.65rem;text-align:center;cursor:pointer;font-size:.83rem;color:var(--mu);border-bottom:2px solid transparent}
+.tab-btn.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:600}
+.tab-pane{display:none;flex:1}.tab-pane.active{display:block}
+.content{padding:.875rem}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:.875rem;margin-bottom:.75rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;padding:.5rem .9rem;border:none;border-radius:6px;cursor:pointer;font-size:.83rem;font-weight:500}
+.btn-pr{background:var(--ac);color:#fff}.btn-pr:hover{background:#4f46e5}
+.btn-sec{background:var(--sf2);color:var(--tx);border:1px solid var(--bd)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.filter-bar{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.65rem;align-items:flex-end}
+.fg{margin-bottom:0}
+.fg label{display:block;font-size:.75rem;color:var(--mu);margin-bottom:.22rem}
+.fg input,.fg select{padding:.4rem .6rem;background:var(--bg);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:.82rem;outline:none}
+.fg input:focus,.fg select:focus{border-color:var(--ac)}
+.fg select option{background:var(--sf)}
+.veh-card{background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:.75rem;margin-bottom:.5rem}
+.veh-vin{font-weight:700;font-size:.9rem}
+.veh-meta{font-size:.78rem;color:var(--mu);margin:.2rem 0}
+.veh-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-top:.35rem}
+.bs{display:inline-block;padding:.18rem .5rem;border-radius:4px;font-size:.7rem;font-weight:600}
+.bs-vt{background:rgba(245,158,11,.15);color:#f59e0b}
+.bs-dv{background:rgba(34,197,94,.15);color:#22c55e}
+.bs-dx{background:rgba(99,102,241,.15);color:#818cf8}
+.bs-ss{background:rgba(34,197,94,.15);color:#22c55e}
+.bs-dg{background:rgba(245,158,11,.15);color:#f59e0b}
+.bs-pnd{background:rgba(148,163,184,.15);color:#94a3b8}
+.bs-apr{background:rgba(34,197,94,.15);color:#22c55e}
+.bs-rej{background:rgba(239,68,68,.15);color:#ef4444}
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;align-items:center;justify-content:center;padding:.875rem}
+.modal-ov.open{display:flex}
+.modal{background:var(--sf);border:1px solid var(--bd);border-radius:12px;width:100%;max-width:400px;padding:1.2rem;max-height:85vh;overflow-y:auto}
+.modal-title{font-weight:600;margin-bottom:.75rem;font-size:.92rem}
+.modal-footer{display:flex;gap:.5rem;justify-content:flex-end;margin-top:.75rem}
+.fg2{margin-bottom:.6rem}
+.fg2 label{display:block;font-size:.76rem;color:var(--mu);margin-bottom:.22rem}
+.fg2 input,.fg2 select,.fg2 textarea{width:100%;padding:.48rem .65rem;background:var(--bg);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:.85rem;outline:none}
+.fg2 input:focus,.fg2 select:focus,.fg2 textarea:focus{border-color:var(--ac)}
+.fg2 select option{background:var(--sf)}
+.toast-wrap{position:fixed;top:1rem;right:1rem;z-index:999;display:flex;flex-direction:column;gap:.4rem}
+.toast{padding:.55rem .9rem;border-radius:8px;font-size:.82rem;font-weight:500;min-width:220px;box-shadow:0 4px 12px rgba(0,0,0,.3);animation:tsi .2s ease}
+.t-ok{background:#166534;color:#fff}.t-err{background:#991b1b;color:#fff}.t-inf{background:#1e3a8a;color:#fff}
+@keyframes tsi{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.spin{width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .65s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:2rem 1rem;color:var(--mu)}
+.empty-icon{font-size:2rem;margin-bottom:.4rem}
+.pgn{display:flex;gap:.3rem;align-items:center;margin-top:.65rem;flex-wrap:wrap}
+.pb{padding:.28rem .55rem;border:1px solid var(--bd);border-radius:5px;background:var(--sf2);color:var(--mu);cursor:pointer;font-size:.76rem}
+.pb:hover{border-color:var(--ac);color:var(--tx)}.pb.act{background:var(--ac);border-color:var(--ac);color:#fff}
+.pb:disabled{opacity:.35;cursor:not-allowed}
+.req-card{background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:.75rem;margin-bottom:.5rem}
+.req-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem}
+.req-id{font-size:.72rem;color:var(--mu)}
+.req-vin{font-weight:600;font-size:.87rem;margin-bottom:.2rem}
+.req-meta{font-size:.76rem;color:var(--mu)}
+.note-box{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:5px;padding:.45rem .6rem;font-size:.76rem;color:#fca5a5;margin-top:.35rem}
+</style></head><body><div class='app'>
+<div class='topbar'>
+  <span class='topbar-title'>👁 TVBH — WMS</span>
+  <span class='topbar-user'><span id='topUser'></span>
+  <button class='btn btn-sec' style='padding:.28rem .6rem;font-size:.73rem' id='btnLogout'>🚪</button></span>
+</div>
+<div class='tab-bar'>
+  <div class='tab-btn active' data-tab='search'>🔍 Tìm xe</div>
+  <div class='tab-btn' data-tab='requests'>📄 Yêu cầu của tôi</div>
+</div>
+<div class='tab-pane active' id='tab-search'><div class='content'>
+  <div class='card'><div class='filter-bar'>
+    <div class='fg'><label>Tìm kiếm</label><input id='srSearch' placeholder='VIN, model...' style='width:170px'></div>
+    <div class='fg'><label>TT Kho</label><select id='srStatus'>
+    <option value=''>Tất cả</option><option>VẬN TẢI</option><option>ĐÃ VỀ</option><option>ĐÃ XUẤT</option></select></div>
+    <div class='fg' style='margin-top:auto'><button class='btn btn-sec' style='padding:.38rem .65rem' id='btnSrReset'>↻</button></div>
+  </div></div>
+  <div id='srResults'><div class='empty-state'><div class='empty-icon'>🚗</div><div>Nhập từ khóa để tìm xe</div></div></div>
+  <div class='pgn' id='srPgn'></div>
+</div></div>
+<div class='tab-pane' id='tab-requests'><div class='content'>
+  <div id='myReqList'><div class='empty-state'><div class='empty-icon'>📋</div><div>Đang tải...</div></div></div>
+  <div class='pgn' id='reqPgn'></div>
+</div></div>
+</div>
+<div class='modal-ov' id='reqModal'><div class='modal'>
+  <div class='modal-title' id='reqModalTitle'>Tạo yêu cầu</div>
+  <input type='hidden' id='reqVin'>
+  <div class='fg2'><label>Số VIN</label><input id='reqVinDisplay' readonly></div>
+  <div class='fg2'><label>Loại yêu cầu *</label><select id='reqType'>
+    <option value='GHEP_XE'>🚗 Ghép xe</option>
+    <option value='XUAT_HOA_DON'>📄 Xuất hóa đơn</option></select></div>
+  <div class='fg2'><label>Tên khách hàng *</label><input id='reqCustomer' placeholder='Nguyễn Văn A'></div>
+  <div class='fg2'><label>Số điện thoại</label><input id='reqPhone' placeholder='09xxxxxxxx' type='tel'></div>
+  <div class='fg2'><label>Ghi chú</label><textarea id='reqNote' rows='2' placeholder='Ghi chú...'></textarea></div>
+  <div class='modal-footer'>
+    <button class='btn btn-sec' id='btnReqCancel'>Hủy</button>
+    <button class='btn btn-pr' id='btnReqSubmit'>✅ Gửi yêu cầu</button>
+  </div></div></div>
+<div class='toast-wrap' id='toastWrap'></div>
+<script src='js/api-client.js'></script>
+<script src='js/auth.js'></script>
+<script>
+const _user = AUTH.requireRole('viewer');
+if(_user) document.getElementById('topUser').textContent = _user.fullName || _user.username;
+document.getElementById('btnLogout').onclick = () => AUTH.logout();
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    if(tab === 'requests') loadMyRequests();
+  });
+});
+function showToast(msg, type) {
+  type = type || 'success';
+  const wrap = document.getElementById('toastWrap');
+  const d = document.createElement('div');
+  d.className = 'toast ' + (type==='success'?'t-ok':type==='error'?'t-err':'t-inf');
+  d.textContent = msg;
+  wrap.appendChild(d);
+  setTimeout(() => d.remove(), 3500);
+}
+function statusBadge(s) {
+  const map = {'VẬN TẢI':'bs-vt','ĐÃ VỀ':'bs-dv','ĐÃ XUẤT':'bs-dx','SẴN SÀNG':'bs-ss','ĐÃ GHÉP':'bs-dg','ĐỢI DUYỆT':'bs-pnd','ĐÃ DUYỆT':'bs-apr','TỪ CHỐI':'bs-rej'};
+  return '<span class="bs ' + (map[s]||'bs-pnd') + '">' + (s||'') + '</span>';
+}
+function makePgn(cid, total, pageSize, cur, fn) {
+  const pages = Math.ceil(total / pageSize);
+  const el = document.getElementById(cid);
+  if(pages <= 1) { el.innerHTML = '<span style="font-size:.75rem;color:var(--mu)">' + total + ' kết quả</span>'; return; }
+  let h = '<button class="pb" ' + (cur<=1?'disabled':'') + ' data-p="' + (cur-1) + '">&larr;</button>';
+  for(let i=Math.max(1,cur-2); i<=Math.min(pages,cur+2); i++) h += '<button class="pb ' + (i===cur?'act':'') + '" data-p="' + i + '">' + i + '</button>';
+  h += '<button class="pb" ' + (cur>=pages?'disabled':'') + ' data-p="' + (cur+1) + '">&rarr;</button>';
+  h += '<span style="font-size:.75rem;color:var(--mu);margin-left:auto">' + total + ' kết quả</span>';
+  el.innerHTML = h;
+  el.querySelectorAll('.pb:not(:disabled)').forEach(b => b.onclick = () => window[fn](+b.dataset.p));
+}
+let srPage = 1, srDebounce;
+document.getElementById('srSearch').oninput = () => { clearTimeout(srDebounce); srDebounce = setTimeout(() => searchVehicles(), 400); };
+document.getElementById('srStatus').onchange = () => searchVehicles();
+document.getElementById('btnSrReset').onclick = () => { document.getElementById('srSearch').value=''; document.getElementById('srStatus').value=''; searchVehicles(); };
+async function searchVehicles(page) {
+  srPage = page || 1;
+  const search = document.getElementById('srSearch').value.trim();
+  const warehouseStatus = document.getElementById('srStatus').value;
+  if(!search && !warehouseStatus) {
+    document.getElementById('srResults').innerHTML = '<div class="empty-state"><div class="empty-icon">&#128663;</div><div>Nhập từ khóa để tìm xe</div></div>';
+    document.getElementById('srPgn').innerHTML = '';
+    return;
+  }
+  document.getElementById('srResults').innerHTML = '<div class="empty-state"><div class="empty-icon">&#9203;</div><div>Đang tìm...</div></div>';
+  try {
+    const res = await API.vehicles.list({search, warehouseStatus, page: srPage, pageSize: 15});
+    if(!res.success) { showToast(res.message, 'error'); return; }
+    const {items, pagination} = res.data;
+    if(!items.length) {
+      document.getElementById('srResults').innerHTML = '<div class="empty-state"><div class="empty-icon">&#128269;</div><div>Không tìm thấy xe</div></div>';
+    } else {
+      document.getElementById('srResults').innerHTML = items.map(v =>
+        '<div class="veh-card">' +
+        '<div class="veh-vin">' + v.VIN + '</div>' +
+        '<div class="veh-meta">' + (v.MODEL||'') + ' • ' + (v.COLOR||'') + ' • ' + (v.VERSION||'') + ' • ' + (v.YEAR||'') + '</div>' +
+        '<div class="veh-footer"><div>' + statusBadge(v.WAREHOUSE_STATUS) + ' ' + statusBadge(v.SALES_STATUS) + '</div>' +
+        (v.WAREHOUSE_STATUS === 'ĐÃ VỀ' && v.SALES_STATUS === 'SẴN SÀNG' ?
+          '<button class="btn btn-pr" style="padding:.32rem .7rem;font-size:.76rem" data-vin="' + v.VIN + '" data-model="' + (v.MODEL||'') + '">&#128196; Tạo yêu cầu</button>' : '') +
+        '</div></div>'
+      ).join('');
+      document.getElementById('srResults').querySelectorAll('[data-vin]').forEach(btn => {
+        btn.onclick = () => openReqModal(btn.dataset.vin, btn.dataset.model);
+      });
+    }
+    makePgn('srPgn', pagination.total, 15, srPage, 'searchVehicles');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+function openReqModal(vin, model) {
+  document.getElementById('reqVin').value = vin;
+  document.getElementById('reqVinDisplay').value = vin + (model ? ' — ' + model : '');
+  document.getElementById('reqCustomer').value = '';
+  document.getElementById('reqPhone').value = '';
+  document.getElementById('reqNote').value = '';
+  document.getElementById('reqModal').classList.add('open');
+}
+document.getElementById('btnReqCancel').onclick = () => document.getElementById('reqModal').classList.remove('open');
+document.querySelectorAll('.modal-ov').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
+document.getElementById('btnReqSubmit').onclick = async function() {
+  const vin = document.getElementById('reqVin').value;
+  const type = document.getElementById('reqType').value;
+  const customer = document.getElementById('reqCustomer').value.trim();
+  const phone = document.getElementById('reqPhone').value.trim();
+  const note = document.getElementById('reqNote').value.trim();
+  if(!vin || !type || !customer) { showToast('❌ Vui lòng nhập tên khách hàng', 'error'); return; }
+  this.disabled = true;
+  this.innerHTML = '<span class="spin"></span> Đang gửi...';
+  try {
+    const res = await API.requests.create({vin, type, customerName: customer, customerPhone: phone, note, requestedBy: _user.username});
+    if(res.success) {
+      showToast('✅ Gửi yêu cầu thành công!');
+      document.getElementById('reqModal').classList.remove('open');
+    } else { showToast(res.message, 'error'); }
+  } catch(e) { showToast(e.message, 'error'); }
+  this.disabled = false;
+  this.textContent = '✅ Gửi yêu cầu';
+};
+let rqPage = 1;
+async function loadMyRequests(page) {
+  rqPage = page || 1;
+  document.getElementById('myReqList').innerHTML = '<div class="empty-state"><div class="empty-icon">&#9203;</div><div>Đang tải...</div></div>';
+  try {
+    const res = await API.requests.list({requestedBy: _user.username, page: rqPage, pageSize: 20});
+    if(!res.success) { showToast(res.message, 'error'); return; }
+    const {items, pagination} = res.data;
+    if(!items.length) {
+      document.getElementById('myReqList').innerHTML = '<div class="empty-state"><div class="empty-icon">&#128196;</div><div>Bạn chưa có yêu cầu nào</div></div>';
+    } else {
+      document.getElementById('myReqList').innerHTML = items.map(r =>
+        '<div class="req-card">' +
+        '<div class="req-hdr"><span class="req-id">' + r.REQUEST_ID + '</span>' + statusBadge(r.STATUS) + '</div>' +
+        '<div class="req-vin">' + r.VIN + '</div>' +
+        '<div class="req-meta">' + r.TYPE + ' • KH: ' + r.CUSTOMER_NAME + ' • ' + r.REQUESTED_AT + '</div>' +
+        (r.REJECT_NOTE ? '<div class="note-box">❌ Lý do: ' + r.REJECT_NOTE + '</div>' : '') +
+        '</div>'
+      ).join('');
+    }
+    makePgn('reqPgn', pagination.total, 20, rqPage, 'loadMyRequests');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+</script></body></html>

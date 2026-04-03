@@ -1,0 +1,504 @@
+<!DOCTYPE html><html lang='vi'><head><meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1.0'>
+<title>WMS Admin</title>
+<script src='https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js'></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f172a;--sf:#1e293b;--sf2:#263248;--bd:#334155;--tx:#f8fafc;--mu:#94a3b8;--ac:#6366f1;--gr:#22c55e;--ye:#f59e0b;--re:#ef4444}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);display:flex;min-height:100vh;font-size:14px}
+.sidebar{width:220px;min-height:100vh;background:var(--sf);border-right:1px solid var(--bd);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100}
+.s-logo{padding:1.1rem 1rem;border-bottom:1px solid var(--bd);font-size:1rem;font-weight:700}
+.s-logo small{display:block;font-size:.72rem;color:var(--mu);font-weight:400;margin-top:.1rem}
+.s-nav{flex:1;padding:.4rem 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:.55rem;padding:.6rem .9rem;cursor:pointer;color:var(--mu);border-left:3px solid transparent;font-size:.85rem}
+.nav-item:hover{background:var(--sf2);color:var(--tx)}
+.nav-item.active{background:var(--sf2);color:var(--ac);border-left-color:var(--ac)}
+.n-badge{background:var(--re);color:#fff;border-radius:9999px;font-size:.63rem;padding:.08rem .38rem;font-weight:700;margin-left:auto}
+.s-footer{padding:.7rem .9rem;border-top:1px solid var(--bd)}
+.u-name{font-size:.78rem;color:var(--mu);margin-bottom:.4rem}
+.u-name b{color:var(--tx);display:block}
+.btn-out{width:100%;padding:.38rem;background:transparent;border:1px solid var(--bd);border-radius:6px;color:var(--mu);cursor:pointer;font-size:.78rem}
+.btn-out:hover{border-color:var(--re);color:var(--re)}
+.main{margin-left:220px;flex:1;display:flex;flex-direction:column}
+.m-hdr{padding:.8rem 1.4rem;border-bottom:1px solid var(--bd);background:var(--sf);font-weight:600;font-size:.95rem}
+.m-body{padding:1.25rem;flex:1}
+.tab-pane{display:none}.tab-pane.active{display:block}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:1.2rem;margin-bottom:1rem}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:.5rem}
+.card-title{font-weight:600;font-size:.9rem}
+.btn{display:inline-flex;align-items:center;gap:.35rem;padding:.42rem .85rem;border:none;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:500;white-space:nowrap}
+.btn-pr{background:var(--ac);color:#fff}.btn-pr:hover:not(:disabled){background:#4f46e5}
+.btn-ok{background:var(--gr);color:#fff}.btn-ok:hover:not(:disabled){background:#16a34a}
+.btn-ng{background:var(--re);color:#fff}.btn-ng:hover:not(:disabled){background:#dc2626}
+.btn-sec{background:var(--sf2);color:var(--tx);border:1px solid var(--bd)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-sm{padding:.28rem .6rem;font-size:.76rem}
+.filter-bar{display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:.875rem;align-items:flex-end}
+.fg{margin-bottom:0}
+.fg label{display:block;font-size:.76rem;color:var(--mu);margin-bottom:.25rem}
+.fg input,.fg select{padding:.42rem .62rem;background:var(--bg);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:.82rem;outline:none}
+.fg input:focus,.fg select:focus{border-color:var(--ac)}
+.fg select option{background:var(--sf)}
+.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--bd)}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+th{background:var(--sf2);padding:.6rem .7rem;text-align:left;color:var(--mu);font-weight:500;white-space:nowrap;border-bottom:1px solid var(--bd)}
+td{padding:.55rem .7rem;border-bottom:1px solid var(--bd);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.018)}
+.e-row td{text-align:center;color:var(--mu);padding:2rem}
+.bs{display:inline-block;padding:.18rem .52rem;border-radius:4px;font-size:.7rem;font-weight:600;white-space:nowrap}
+.bs-vt{background:rgba(245,158,11,.15);color:#f59e0b}
+.bs-dv{background:rgba(34,197,94,.15);color:#22c55e}
+.bs-dx{background:rgba(99,102,241,.15);color:#818cf8}
+.bs-ss{background:rgba(34,197,94,.15);color:#22c55e}
+.bs-dg{background:rgba(245,158,11,.15);color:#f59e0b}
+.bs-xh{background:rgba(239,68,68,.15);color:#ef4444}
+.bs-adm{background:rgba(99,102,241,.15);color:#818cf8}
+.bs-wh{background:rgba(34,197,94,.15);color:#22c55e}
+.bs-vw{background:rgba(148,163,184,.15);color:#94a3b8}
+.drop-zone{border:2px dashed var(--bd);border-radius:10px;padding:2rem 1rem;text-align:center;cursor:pointer;color:var(--mu)}
+.drop-zone:hover,.drop-zone.dov{border-color:var(--ac);background:rgba(99,102,241,.06);color:var(--tx)}
+.dz-icon{font-size:2rem;margin-bottom:.4rem}
+.dz-txt{font-size:.85rem}.dz-sub{font-size:.75rem;color:var(--mu);margin-top:.2rem}
+.ps-chip{display:inline-block;padding:.22rem .62rem;border-radius:9999px;font-size:.74rem;font-weight:600;margin-right:.4rem}
+.ps-ok{background:rgba(34,197,94,.15);color:#22c55e}
+.ps-err{background:rgba(239,68,68,.15);color:#ef4444}
+.row-ok td{background:rgba(34,197,94,.03)}
+.row-err td{background:rgba(239,68,68,.06)}
+.err-txt{color:var(--re);font-size:.72rem;margin-top:.12rem}
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;align-items:center;justify-content:center;padding:1rem}
+.modal-ov.open{display:flex}
+.modal{background:var(--sf);border:1px solid var(--bd);border-radius:12px;width:100%;max-width:420px;padding:1.4rem}
+.modal-title{font-weight:600;margin-bottom:.875rem;font-size:.95rem}
+.modal-footer{display:flex;gap:.5rem;justify-content:flex-end;margin-top:.875rem}
+.fg2{margin-bottom:.7rem}
+.fg2 label{display:block;font-size:.78rem;color:var(--mu);margin-bottom:.28rem}
+.fg2 input,.fg2 select,.fg2 textarea{width:100%;padding:.48rem .68rem;background:var(--bg);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:.84rem;outline:none}
+.fg2 input:focus,.fg2 select:focus,.fg2 textarea:focus{border-color:var(--ac)}
+.fg2 select option{background:var(--sf)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}
+.toast-wrap{position:fixed;top:1.1rem;right:1.1rem;z-index:999;display:flex;flex-direction:column;gap:.45rem;pointer-events:none}
+.toast{padding:.6rem .95rem;border-radius:8px;font-size:.82rem;font-weight:500;min-width:230px;max-width:340px;box-shadow:0 4px 12px rgba(0,0,0,.3);animation:tsi .2s ease;pointer-events:auto}
+.t-ok{background:#166534;color:#fff}.t-err{background:#991b1b;color:#fff}.t-inf{background:#1e3a8a;color:#fff}
+@keyframes tsi{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.pgn{display:flex;gap:.3rem;align-items:center;margin-top:.875rem;flex-wrap:wrap}
+.pb{padding:.3rem .58rem;border:1px solid var(--bd);border-radius:5px;background:var(--sf2);color:var(--mu);cursor:pointer;font-size:.78rem}
+.pb:hover{border-color:var(--ac);color:var(--tx)}.pb.act{background:var(--ac);border-color:var(--ac);color:#fff}
+.pb:disabled{opacity:.35;cursor:not-allowed}
+.pgn-info{font-size:.76rem;color:var(--mu);margin-left:auto}
+.spin{width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .65s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style></head><body>
+<div class='sidebar'>
+  <div class='s-logo'>🏭 WMS<small>Admin Panel</small></div>
+  <nav class='s-nav'>
+    <div class='nav-item active' data-tab='import'>📥 Import xe</div>
+    <div class='nav-item' data-tab='vehicles'>🚗 Danh sách xe</div>
+    <div class='nav-item' data-tab='requests'>✅ Duyệt YC<span class='n-badge' id='reqBadge' style='display:none'>0</span></div>
+    <div class='nav-item' data-tab='warehouses'>🏭 Quản lý kho</div>
+    <div class='nav-item' data-tab='users'>👥 Người dùng</div>
+    <div class='nav-item' data-tab='logs'>📋 Log hệ thống</div>
+  </nav>
+  <div class='s-footer'>
+    <div class='u-name'><b id='sidebarName'>Admin</b>Quản trị viên</div>
+    <button class='btn-out' id='btnLogout'>🚪 Đăng xuất</button>
+  </div>
+</div>
+<div class='main'><div class='m-hdr' id='mainHdr'>Import xe</div><div class='m-body'>
+<div class='tab-pane active' id='tab-import'>
+  <div class='card'><div class='card-hdr'><span class='card-title'>📥 Import xe từ Excel</span></div>
+  <div class='drop-zone' id='dropZone'><div class='dz-icon'>📄</div>
+  <div class='dz-txt'>Kéo thả file Excel vào đây</div>
+  <div class='dz-sub'>hoặc click để chọn file .xlsx / .xls</div>
+  <input type='file' id='fileInput' accept='.xlsx,.xls' style='display:none'></div>
+  <div id='importPreview' style='display:none;margin-top:1rem'>
+    <div style='display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem'>
+      <div id='importSummary'></div>
+      <button class='btn btn-ok' id='btnConfirmImport' disabled>✅ Xác nhận import</button></div>
+    <div class='tbl-wrap'><table>
+      <thead><tr><th>STT</th><th>VIN</th><th>Model</th><th>Màu</th><th>Phiên bản</th><th>Năm</th><th>PO</th><th>Trạng thái</th></tr></thead>
+      <tbody id='importTbody'></tbody></table></div></div></div></div>
+<div class='tab-pane' id='tab-vehicles'>
+  <div class='card'><div class='card-hdr'><span class='card-title'>🚗 Danh sách xe</span></div>
+  <div class='filter-bar'>
+    <div class='fg'><label>Tìm kiếm</label><input id='vSearch' placeholder='VIN, model...' style='width:180px'></div>
+    <div class='fg'><label>TT Kho</label><select id='vWStatus'><option value=''>Tất cả</option><option>VẬN TẢI</option><option>ĐÃ VỀ</option><option>ĐÃ XUẤT</option></select></div>
+    <div class='fg'><label>TT Bán</label><select id='vSStatus'><option value=''>Tất cả</option><option>SẴN SÀNG</option><option>ĐÃ GHÉP</option><option>ĐÃ XHĐ</option></select></div>
+    <div class='fg'><label>Kho</label><select id='vWarehouse'><option value=''>Tất cả</option></select></div>
+    <div class='fg' style='margin-top:auto'><button class='btn btn-sec btn-sm' id='btnVReset'>↻ Reset</button></div>
+  </div>
+  <div class='tbl-wrap'><table>
+    <thead><tr><th>STT</th><th>Số VIN</th><th>Model</th><th>Màu</th><th>Phiên bản</th><th>Năm</th><th>TT Kho</th><th>TT Bán</th><th>Vị trí</th></tr></thead>
+    <tbody id='vehiclesTbody'><tr class='e-row'><td colspan='9'>⏳ Đang tải...</td></tr></tbody></table></div>
+  <div class='pgn' id='vehiclesPgn'></div></div></div>
+<div class='tab-pane' id='tab-requests'>
+  <div class='card'><div class='card-hdr'><span class='card-title'>✅ Duyệt yêu cầu</span>
+  <button class='btn btn-sec btn-sm' id='btnRReload'>↻ Tải lại</button></div>
+  <div class='tbl-wrap'><table>
+    <thead><tr><th>Mã YC</th><th>Loại</th><th>Số VIN</th><th>Khách hàng</th><th>Người tạo</th><th>Thời gian</th><th>Thao tác</th></tr></thead>
+    <tbody id='requestsTbody'><tr class='e-row'><td colspan='7'>⏳ Đang tải...</td></tr></tbody></table></div>
+  <div class='pgn' id='requestsPgn'></div></div></div>
+<div class='tab-pane' id='tab-warehouses'>
+  <div style='display:grid;grid-template-columns:1fr 320px;gap:1rem'>
+    <div class='card'><div class='card-hdr'><span class='card-title'>🏭 Danh sách kho</span></div>
+    <div class='tbl-wrap'><table>
+      <thead><tr><th>ID</th><th>Tên kho</th><th>Địa chỉ</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <tbody id='warehousesTbody'><tr class='e-row'><td colspan='5'>Đang tải...</td></tr></tbody></table></div></div>
+    <div class='card'><div class='card-hdr'><span class='card-title'>➕ Thêm kho mới</span></div>
+    <div class='fg2'><label>ID kho *</label><input id='wId' placeholder='vd: kho_ha_noi'></div>
+    <div class='fg2'><label>Tên kho *</label><input id='wName' placeholder='Kho Hà Nội'></div>
+    <div class='fg2'><label>Địa chỉ</label><input id='wAddr' placeholder='123 đường...'></div>
+    <button class='btn btn-pr' id='btnWCreate' style='width:100%'>🏭 Tạo kho</button></div>
+  </div></div>
+<div class='tab-pane' id='tab-users'>
+  <div style='display:grid;grid-template-columns:1fr 300px;gap:1rem'>
+    <div class='card'><div class='card-hdr'><span class='card-title'>👥 Người dùng</span></div>
+    <div class='tbl-wrap'><table>
+      <thead><tr><th>Username</th><th>Họ tên</th><th>Role</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <tbody id='usersTbody'><tr class='e-row'><td colspan='5'>Đang tải...</td></tr></tbody></table></div></div>
+    <div class='card'><div class='card-hdr'><span class='card-title'>➕ Tạo tài khoản</span></div>
+    <div class='form-row'>
+      <div class='fg2'><label>Username *</label><input id='uUser' placeholder='username'></div>
+      <div class='fg2'><label>Mật khẩu *</label><input id='uPass' type='password' placeholder='••••••'></div></div>
+    <div class='fg2'><label>Họ và tên *</label><input id='uFull' placeholder='Nguyễn Văn A'></div>
+    <div class='fg2'><label>Role *</label><select id='uRole'>
+      <option value='warehouse'>🏭 Thủ kho</option>
+      <option value='viewer'>👁 TVBH</option>
+      <option value='admin'>⚙ Admin</option></select></div>
+    <button class='btn btn-pr' id='btnUCreate' style='width:100%'>👥 Tạo tài khoản</button></div>
+  </div></div>
+<div class='tab-pane' id='tab-logs'>
+  <div class='card'><div class='card-hdr'>
+    <span class='card-title'>📋 Log hệ thống</span>
+    <div class='filter-bar' style='margin:0'>
+      <div class='fg'><label>Action</label><select id='logAction'>
+        <option value=''>Tất cả</option><option>IMPORT</option><option>INBOUND</option>
+        <option>OUTBOUND</option><option>REQUEST_CREATE</option><option>REQUEST_APPROVE</option></select></div>
+      <div class='fg' style='margin-top:auto'><button class='btn btn-sec btn-sm' id='btnLReload'>↻</button></div>
+    </div></div>
+  <div class='tbl-wrap'><table>
+    <thead><tr><th>Thời gian</th><th>Action</th><th>VIN</th><th>Người TH</th><th>Chi tiết</th></tr></thead>
+    <tbody id='logsTbody'><tr class='e-row'><td colspan='5'>⏳ Đang tải...</td></tr></tbody></table></div>
+  <div class='pgn' id='logsPgn'></div></div></div>
+</div></div>
+<div class='modal-ov' id='rejectModal'>
+  <div class='modal'><div class='modal-title'>❌ Từ chối yêu cầu</div>
+  <div class='fg2'><label>Lý do từ chối *</label>
+  <textarea id='rejectNote' rows='3' placeholder='Nhập lý do...'></textarea></div>
+  <div class='modal-footer'>
+    <button class='btn btn-sec' id='btnRejectCancel'>Hủy</button>
+    <button class='btn btn-ng' id='btnRejectSubmit'>Xác nhận từ chối</button>
+  </div></div></div>
+<div class='toast-wrap' id='toastWrap'></div>
+<script src='js/api-client.js'></script>
+<script src='js/auth.js'></script>
+<script>
+const _user = AUTH.requireRole('admin');
+if(_user) document.getElementById('sidebarName').textContent = _user.fullName || _user.username;
+
+const TAB_LABELS = {
+  import:'Import xe', vehicles:'Danh s\u00e1ch xe', requests:'Duy\u1ec7t y\u00eau c\u1ea7u',
+  warehouses:'Qu\u1ea3n l\u00fd kho', users:'Ng\u01b0\u1eddi d\u00f9ng', logs:'Log h\u1ec7 th\u1ed1ng'
+};
+let importValidRows = [], rejectRequestId = null;
+let vPage = 1, rPage = 1, lPage = 1;
+
+// ---- NAVIGATION ----
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    const tab = item.dataset.tab;
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('mainHdr').textContent = TAB_LABELS[tab] || tab;
+    if(tab === 'vehicles') loadVehicles();
+    else if(tab === 'requests') loadRequests();
+    else if(tab === 'warehouses') loadWarehouses();
+    else if(tab === 'users') loadUsers();
+    else if(tab === 'logs') loadLogs();
+  });
+});
+document.getElementById('btnLogout').onclick = () => AUTH.logout();
+
+// ---- TOAST ----
+function showToast(msg, type) {
+  type = type || 'success';
+  const wrap = document.getElementById('toastWrap');
+  const d = document.createElement('div');
+  d.className = 'toast ' + (type === 'success' ? 't-ok' : type === 'error' ? 't-err' : 't-inf');
+  d.textContent = msg;
+  wrap.appendChild(d);
+  setTimeout(() => d.remove(), 3200);
+}
+
+// ---- BADGE ----
+function statusBadge(s) {
+  const map = {
+    'V\u1eacN T\u1ea2I':'bs-vt','\u0110\u00c3 V\u1ec0':'bs-dv','\u0110\u00c3 XU\u1ea4T':'bs-dx',
+    'S\u1eb4N S\u00c0NG':'bs-ss','\u0110\u00c3 GH\u00c9P':'bs-dg','\u0110\u00c3 XH\u0110':'bs-xh',
+    'admin':'bs-adm','warehouse':'bs-wh','viewer':'bs-vw',
+    'GHEP_XE':'bs-gy','XUAT_HOA_DON':'bs-rx'
+  };
+  return '<span class="bs ' + (map[s] || 'bs-vw') + '">' + (s || '') + '</span>';
+}
+
+// ---- PAGINATION ----
+function makePgn(cid, total, pageSize, cur, fn) {
+  const pages = Math.ceil(total / pageSize);
+  const el = document.getElementById(cid);
+  if(pages <= 1) { el.innerHTML = '<span class="pgn-info">' + total + ' k\u1ebft qu\u1ea3</span>'; return; }
+  let h = '';
+  h += '<button class="pb" ' + (cur<=1?'disabled':'') + ' data-p="' + (cur-1) + '">&larr;</button>';
+  for(let i = Math.max(1, cur-2); i <= Math.min(pages, cur+2); i++) {
+    h += '<button class="pb ' + (i===cur?'act':'') + '" data-p="' + i + '">' + i + '</button>';
+  }
+  h += '<button class="pb" ' + (cur>=pages?'disabled':'') + ' data-p="' + (cur+1) + '">&rarr;</button>';
+  h += '<span class="pgn-info">' + total + ' k\u1ebft qu\u1ea3</span>';
+  el.innerHTML = h;
+  el.querySelectorAll('.pb:not(:disabled)').forEach(b => b.onclick = () => window[fn](+b.dataset.p));
+}
+// ---- IMPORT ----
+const dropZone = document.getElementById('dropZone');
+dropZone.onclick = () => document.getElementById('fileInput').click();
+dropZone.ondragover = e => { e.preventDefault(); dropZone.classList.add('dov'); };
+dropZone.ondragleave = () => dropZone.classList.remove('dov');
+dropZone.ondrop = e => { e.preventDefault(); dropZone.classList.remove('dov'); const f = e.dataTransfer.files[0]; if(f) processExcel(f); };
+document.getElementById('fileInput').onchange = e => { if(e.target.files[0]) processExcel(e.target.files[0]); };
+
+function processExcel(file) {
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'binary'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws, {defval:''});
+      if(!raw.length) { showToast('File Excel tr\u1ed1ng!', 'error'); return; }
+      const rows = raw.map(r => ({
+        VIN: String(r['VIN'] || r['vin'] || '').trim().toUpperCase(),
+        MODEL: String(r['MODEL'] || r['Model'] || r['model'] || '').trim(),
+        COLOR: String(r['COLOR'] || r['Color'] || r['M\u00c0U'] || '').trim(),
+        VERSION: String(r['VERSION'] || r['Version'] || r['PHI\u00caN B\u1ea2N'] || '').trim(),
+        YEAR: String(r['YEAR'] || r['Year'] || r['N\u0102M'] || '').trim(),
+        PO_NUMBER: String(r['PO_NUMBER'] || r['PO'] || '').trim(),
+        NOTE: String(r['NOTE'] || r['GHI CH\u00da'] || '').trim()
+      }));
+      showToast('\u23f3 \u0110ang ki\u1ec3m tra ' + rows.length + ' d\u00f2ng...', 'info');
+      const res = await API.vehicles.importPreview(rows);
+      if(!res.success) { showToast(res.message, 'error'); return; }
+      importValidRows = res.data.valid || [];
+      renderPreview(res.data);
+    } catch(err) { showToast('L\u1ed7i \u0111\u1ecdc file: ' + err.message, 'error'); }
+  };
+  reader.readAsBinaryString(file);
+}
+
+function renderPreview(data) {
+  const {validCount, errorCount, valid, errors} = data;
+  document.getElementById('importSummary').innerHTML =
+    '<span class="ps-chip ps-ok">\u2705 ' + validCount + ' h\u1ee3p l\u1ec7</span>' +
+    (errorCount ? '<span class="ps-chip ps-err">\u274c ' + errorCount + ' l\u1ed7i</span>' : '');
+  const btn = document.getElementById('btnConfirmImport');
+  btn.disabled = validCount === 0;
+  btn.textContent = '\u2705 X\u00e1c nh\u1eadn import ' + validCount + ' xe';
+  let rows = '';
+  (valid || []).forEach((r, i) => {
+    rows += '<tr class="row-ok"><td>' + (i+1) + '</td><td>' + r.VIN + '</td><td>' + r.MODEL + '</td><td>' + r.COLOR + '</td><td>' + r.VERSION + '</td><td>' + r.YEAR + '</td><td>' + (r.PO_NUMBER||'') + '</td><td><span class="ps-chip ps-ok">\u2705 H\u1ee3p l\u1ec7</span></td></tr>';
+  });
+  (errors || []).forEach(e => {
+    rows += '<tr class="row-err"><td>' + (e.rowNumber||'?') + '</td><td>' + (e.vin||'?') + '</td><td colspan="5"><span class="err-txt">\u274c ' + (e.errors||[]).join(' | ') + '</span></td><td><span class="ps-chip ps-err">\u274c L\u1ed7i</span></td></tr>';
+  });
+  document.getElementById('importTbody').innerHTML = rows || '<tr class="e-row"><td colspan="8">Kh\u00f4ng c\u00f3 d\u1eef li\u1ec7u</td></tr>';
+  document.getElementById('importPreview').style.display = 'block';
+}
+
+document.getElementById('btnConfirmImport').onclick = async function() {
+  if(!importValidRows.length) return;
+  this.disabled = true;
+  this.innerHTML = '<span class="spin"></span> \u0110ang import...';
+  try {
+    const res = await API.vehicles.importConfirm(importValidRows);
+    if(res.success) {
+      showToast('\u2705 Import th\u00e0nh c\u00f4ng ' + res.data.imported + ' xe!');
+      document.getElementById('importPreview').style.display = 'none';
+      document.getElementById('fileInput').value = '';
+      importValidRows = [];
+    } else { showToast(res.message, 'error'); }
+  } catch(e) { showToast('L\u1ed7i: ' + e.message, 'error'); }
+  this.disabled = false;
+  this.textContent = '\u2705 X\u00e1c nh\u1eadn import';
+};
+// ---- VEHICLES ----
+let vDebounce;
+document.getElementById('vSearch').oninput = () => { clearTimeout(vDebounce); vDebounce = setTimeout(() => loadVehicles(), 400); };
+document.getElementById('vWStatus').onchange = () => loadVehicles();
+document.getElementById('vSStatus').onchange = () => loadVehicles();
+document.getElementById('vWarehouse').onchange = () => loadVehicles();
+document.getElementById('btnVReset').onclick = () => {
+  ['vSearch','vWStatus','vSStatus','vWarehouse'].forEach(id => document.getElementById(id).value = '');
+  loadVehicles();
+};
+
+async function loadVehicles(page) {
+  vPage = page || 1;
+  const tbody = document.getElementById('vehiclesTbody');
+  tbody.innerHTML = '<tr class="e-row"><td colspan="9">\u23f3 \u0110ang t\u1ea3i...</td></tr>';
+  try {
+    const res = await API.vehicles.list({
+      search: document.getElementById('vSearch').value.trim(),
+      warehouseStatus: document.getElementById('vWStatus').value,
+      salesStatus: document.getElementById('vSStatus').value,
+      warehouseId: document.getElementById('vWarehouse').value,
+      page: vPage, pageSize: 20
+    });
+    if(!res.success) { showToast(res.message, 'error'); return; }
+    const {items, pagination} = res.data;
+    const start = (pagination.page - 1) * pagination.pageSize;
+    tbody.innerHTML = items.length
+      ? items.map((v, i) => '<tr><td>' + (start+i+1) + '</td><td><b>' + v.VIN + '</b></td><td>' + (v.MODEL||'') + '</td><td>' + (v.COLOR||'') + '</td><td>' + (v.VERSION||'') + '</td><td>' + (v.YEAR||'') + '</td><td>' + statusBadge(v.WAREHOUSE_STATUS) + '</td><td>' + statusBadge(v.SALES_STATUS) + '</td><td>' + (v.WAREHOUSE_ID||'&mdash;') + '</td></tr>').join('')
+      : '<tr class="e-row"><td colspan="9">\u2205 Kh\u00f4ng c\u00f3 xe n\u00e0o</td></tr>';
+    makePgn('vehiclesPgn', pagination.total, 20, vPage, 'loadVehicles');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ---- REQUESTS ----
+document.getElementById('btnRReload').onclick = () => loadRequests();
+
+async function loadRequests(page) {
+  rPage = page || 1;
+  document.getElementById('requestsTbody').innerHTML = '<tr class="e-row"><td colspan="7">\u23f3 \u0110ang t\u1ea3i...</td></tr>';
+  try {
+    const res = await API.requests.list({status:'\u0110\u1ee2I DUY\u1ec6T', page: rPage, pageSize: 20});
+    if(!res.success) { showToast(res.message, 'error'); return; }
+    const {items, pagination} = res.data;
+    const badge = document.getElementById('reqBadge');
+    if(pagination.total > 0) { badge.textContent = pagination.total > 99 ? '99+' : pagination.total; badge.style.display = 'inline'; }
+    else badge.style.display = 'none';
+    document.getElementById('requestsTbody').innerHTML = items.length
+      ? items.map(r => '<tr><td><small>' + r.REQUEST_ID + '</small></td><td>' + statusBadge(r.TYPE) + '</td><td><b>' + r.VIN + '</b></td><td>' + r.CUSTOMER_NAME + '</td><td>' + r.REQUESTED_BY + '</td><td>' + r.REQUESTED_AT + '</td><td style="white-space:nowrap"><button class="btn btn-ok btn-sm" data-id="' + r.REQUEST_ID + '" data-action="approve">\u2713 Duy\u1ec7t</button> <button class="btn btn-ng btn-sm" data-id="' + r.REQUEST_ID + '" data-action="reject">\u00d7 T\u1eeb ch\u1ed1i</button></td></tr>').join('')
+      : '<tr class="e-row"><td colspan="7">\u2705 Kh\u00f4ng c\u00f3 y\u00eau c\u1ea7u n\u00e0o ch\u1edd</td></tr>';
+    document.getElementById('requestsTbody').querySelectorAll('[data-action="approve"]').forEach(b => b.onclick = () => approveReq(b.dataset.id, true));
+    document.getElementById('requestsTbody').querySelectorAll('[data-action="reject"]').forEach(b => b.onclick = () => openReject(b.dataset.id));
+    makePgn('requestsPgn', pagination.total, 20, rPage, 'loadRequests');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function approveReq(id, approved) {
+  const res = await API.requests.approve(id, approved, '');
+  showToast(res.success ? '\u2705 \u0110\u00e3 duy\u1ec7t y\u00eau c\u1ea7u' : res.message, res.success ? 'success' : 'error');
+  if(res.success) loadRequests(rPage);
+}
+
+function openReject(id) {
+  rejectRequestId = id;
+  document.getElementById('rejectNote').value = '';
+  document.getElementById('rejectModal').classList.add('open');
+}
+
+document.getElementById('btnRejectCancel').onclick = () => document.getElementById('rejectModal').classList.remove('open');
+document.getElementById('btnRejectSubmit').onclick = async function() {
+  const note = document.getElementById('rejectNote').value.trim();
+  if(!note) { showToast('Vui l\u00f2ng nh\u1eadp l\u00fd do t\u1eeb ch\u1ed1i', 'error'); return; }
+  const res = await API.requests.approve(rejectRequestId, false, note);
+  showToast(res.success ? '\u274c \u0110\u00e3 t\u1eeb ch\u1ed1i y\u00eau c\u1ea7u' : res.message, res.success ? 'success' : 'error');
+  if(res.success) { document.getElementById('rejectModal').classList.remove('open'); loadRequests(rPage); }
+};
+// ---- WAREHOUSES ----
+async function loadWarehouses() {
+  try {
+    const res = await API.warehouses.list();
+    if(!res.success) { showToast(res.message, 'error'); return; }
+    const items = res.data || [];
+    document.getElementById('warehousesTbody').innerHTML = items.length
+      ? items.map(w => '<tr><td><code>' + w.ID + '</code></td><td>' + w.NAME + '</td><td>' + (w.ADDRESS || '&mdash;') + '</td><td>' + (w.ACTIVE ? '<span class="bs bs-dv">Ho\u1ea1t \u0111\u1ed9ng</span>' : '<span class="bs bs-xh">\u1ea8n</span>') + '</td><td><button class="btn btn-sec btn-sm" data-wid="' + w.ID + '" data-active="' + (!w.ACTIVE) + '">' + (w.ACTIVE ? 'V\u00f4 hi\u1ec7u' : 'K\u00edch ho\u1ea1t') + '</button></td></tr>').join('')
+      : '<tr class="e-row"><td colspan="5">Ch\u01b0a c\u00f3 kho n\u00e0o</td></tr>';
+    document.getElementById('warehousesTbody').querySelectorAll('[data-wid]').forEach(b => b.onclick = () => toggleWarehouse(b.dataset.wid, b.dataset.active === 'true'));
+    const sel = document.getElementById('vWarehouse');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">T\u1ea5t c\u1ea3</option>' + items.map(w => '<option value="' + w.ID + '">' + w.NAME + '</option>').join('');
+    sel.value = cur;
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+document.getElementById('btnWCreate').onclick = async function() {
+  const id = document.getElementById('wId').value.trim();
+  const name = document.getElementById('wName').value.trim();
+  const address = document.getElementById('wAddr').value.trim();
+  if(!id || !name) { showToast('\u274c Vui l\u00f2ng nh\u1eadp ID v\u00e0 T\u00ean kho', 'error'); return; }
+  this.disabled = true;
+  const res = await API.warehouses.create({id, name, address});
+  showToast(res.success ? '\u2705 T\u1ea1o kho th\u00e0nh c\u00f4ng: ' + name : res.message, res.success ? 'success' : 'error');
+  if(res.success) { ['wId','wName','wAddr'].forEach(x => document.getElementById(x).value = ''); loadWarehouses(); }
+  this.disabled = false;
+};
+
+async function toggleWarehouse(id, active) {
+  const res = await API.warehouses.update(id, {active});
+  showToast(res.success ? '\u2705 C\u1eadp nh\u1eadt kho' : res.message, res.success ? 'success' : 'error');
+  if(res.success) loadWarehouses();
+}
+
+// ---- USERS ----
+async function loadUsers() {
+  try {
+    const res = await API.users.list();
+    if(!res.success) { showToast(res.message, 'error'); return; }
+    document.getElementById('usersTbody').innerHTML = (res.data||[]).length
+      ? res.data.map(u => '<tr><td><b>' + u.username + '</b></td><td>' + (u.fullName||'') + '</td><td>' + statusBadge(u.role) + '</td><td>' + (u.active ? '<span class="bs bs-dv">Ho\u1ea1t \u0111\u1ed9ng</span>' : '<span class="bs bs-xh">B\u1ecb kh\u00f3a</span>') + '</td><td><button class="btn btn-sec btn-sm" data-un="' + u.username + '" data-active="' + (!u.active) + '">' + (u.active ? 'Kh\u00f3a' : 'M\u1edf kh\u00f3a') + '</button></td></tr>').join('')
+      : '<tr class="e-row"><td colspan="5">Ch\u01b0a c\u00f3 ng\u01b0\u1eddi d\u00f9ng</td></tr>';
+    document.getElementById('usersTbody').querySelectorAll('[data-un]').forEach(b => b.onclick = () => toggleUser(b.dataset.un, b.dataset.active === 'true'));
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+document.getElementById('btnUCreate').onclick = async function() {
+  const username = document.getElementById('uUser').value.trim();
+  const password = document.getElementById('uPass').value;
+  const fullName = document.getElementById('uFull').value.trim();
+  const role = document.getElementById('uRole').value;
+  if(!username || !password || !fullName) { showToast('\u274c Vui l\u00f2ng nh\u1eadp \u0111\u1ea7y \u0111\u1ee7 th\u00f4ng tin', 'error'); return; }
+  this.disabled = true;
+  const res = await API.users.create({username, password, role, fullName});
+  showToast(res.success ? '\u2705 T\u1ea1o t\u00e0i kho\u1ea3n: ' + username : res.message, res.success ? 'success' : 'error');
+  if(res.success) { ['uUser','uPass','uFull'].forEach(x => document.getElementById(x).value = ''); loadUsers(); }
+  this.disabled = false;
+};
+
+async function toggleUser(username, active) {
+  const res = await API.users.update({username, active});
+  showToast(res.success ? '\u2705 C\u1eadp nh\u1eadt t\u00e0i kho\u1ea3n' : res.message, res.success ? 'success' : 'error');
+  if(res.success) loadUsers();
+}
+
+// ---- LOGS ----
+document.getElementById('btnLReload').onclick = () => loadLogs();
+document.getElementById('logAction').onchange = () => loadLogs();
+
+async function loadLogs(page) {
+  lPage = page || 1;
+  document.getElementById('logsTbody').innerHTML = '<tr class="e-row"><td colspan="5">\u23f3 \u0110ang t\u1ea3i...</td></tr>';
+  try {
+    const res = await API.logs.list({action: document.getElementById('logAction').value, page: lPage, pageSize: 50});
+    if(!res.success) { showToast(res.message, 'error'); return; }
+    const {items, pagination} = res.data;
+    document.getElementById('logsTbody').innerHTML = items.length
+      ? items.map(l => '<tr><td><small>' + l.TIMESTAMP + '</small></td><td><span class="bs bs-gy">' + l.ACTION + '</span></td><td>' + (l.VIN || '&mdash;') + '</td><td>' + (l.USERNAME||'') + '</td><td><small style="color:var(--mu)">' + JSON.stringify(l.DETAIL||{}) + '</small></td></tr>').join('')
+      : '<tr class="e-row"><td colspan="5">\u2205 Kh\u00f4ng c\u00f3 log</td></tr>';
+    makePgn('logsPgn', pagination.total, 50, lPage, 'loadLogs');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ---- MODAL CLOSE ON OVERLAY ----
+document.querySelectorAll('.modal-ov').forEach(m => m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); }));
+
+// ---- INIT: load pending count ----
+(async () => {
+  try {
+    const res = await API.requests.list({status:'\u0110\u1ee2I DUY\u1ec6T', pageSize:1});
+    if(res.success && res.data.pagination.total > 0) {
+      const b = document.getElementById('reqBadge');
+      b.textContent = res.data.pagination.total;
+      b.style.display = 'inline';
+    }
+  } catch(e) {}
+})();
+</script></body></html>
