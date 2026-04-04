@@ -4,7 +4,7 @@
 // ⚠️  CẤU HÌNH: Thay GAS_URL bằng URL Web App sau khi deploy.
 // ============================================================
 
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyk2-0SR-5ZQY1_0bzEXXP08osJpTyvho8ZlTOLO60DDsz2ea-tvhrq0PKlweP-VM21/exec';
+const GAS_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
 const API = (() => {
 
@@ -55,8 +55,9 @@ const API = (() => {
   // ── Vehicles ─────────────────────────────────────────────
 
   const vehicles = {
-    list: (filters = {}) => get('vehicles.list', filters),
-    get:  (vin)          => get('vehicles.get', { vin }),
+    list:     (filters = {}) => get('vehicles.list', filters),
+    get:      (vin)          => get('vehicles.get', { vin }),
+    getByVin: (vin)          => get('vehicles.get', { vin }), // alias dùng trong warehouse.html
 
     /**
      * Import preview (không lưu).
@@ -77,10 +78,30 @@ const API = (() => {
   // ── Warehouse operations ──────────────────────────────────
 
   const warehouse = {
-    inbound:  (vin, warehouseId, photoUrls) =>
-      post('warehouse.inbound',  { vin, warehouseId, photoUrls }),
-    outbound: (vin, deliveredBy, note, photoUrls) =>
-      post('warehouse.outbound', { vin, deliveredBy, note, photoUrls })
+    /**
+     * Nhập kho.
+     * @param {Object} data  { vin, warehouseId, zone, row, slot, photos[], performedBy }
+     */
+    inbound:  (data) => post('warehouse.inbound',  data),
+
+    /**
+     * Xuất kho.
+     * @param {Object} data  { vin, deliverer, note, photos[], performedBy }
+     */
+    outbound: (data) => post('warehouse.outbound', data)
+  };
+
+  // ── Locations (vị trí kho) ────────────────────────────────
+
+  const locations = {
+    /** Danh sách khu trong một kho. */
+    getZones:         (warehouseId)             => get('locations.zones',  { warehouseId }),
+
+    /** Danh sách dãy trong một khu. */
+    getRows:          (warehouseId, zone)        => get('locations.rows',   { warehouseId, zone }),
+
+    /** Danh sách ô (kèm trạng thái chiếm dụng) trong một dãy. */
+    getAvailableSlots:(warehouseId, zone, row)   => get('locations.slots',  { warehouseId, zone, row })
   };
 
   // ── Requests ─────────────────────────────────────────────
@@ -133,5 +154,5 @@ const API = (() => {
     return res?.message || fallback || 'Đã xảy ra lỗi. Vui lòng thử lại.';
   }
 
-  return { get, post, auth, vehicles, warehouse, requests, images, warehouses, users, logs, getErrorMessage };
+  return { get, post, auth, vehicles, warehouse, locations, requests, images, warehouses, users, logs, getErrorMessage };
 })();
