@@ -4,7 +4,7 @@
 // ⚠️  CẤU HÌNH: Thay GAS_URL bằng URL Web App sau khi deploy.
 // ============================================================
 
-const GAS_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyk2-0SR-5ZQY1_0bzEXXP08osJpTyvho8ZlTOLO60DDsz2ea-tvhrq0PKlweP-VM21/exec';
 
 const API = (() => {
 
