@@ -1,5 +1,6 @@
-<!DOCTYPE html><html lang='vi'><head><meta charset='UTF-8'>
-<meta name='viewport' content='width=device-width,initial-scale=1.0'>
+<!DOCTYPE html><html lang="vi"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>WMS — Thủ Kho</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -9,13 +10,26 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
 .topbar{padding:.75rem 1rem;background:var(--sf);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .topbar-title{font-weight:700;font-size:1rem}
 .topbar-user{font-size:.78rem;color:var(--mu)}
+.btn-logout{background:transparent;border:1px solid var(--bd);color:var(--mu);border-radius:6px;padding:.3rem .5rem;cursor:pointer;font-size:1rem;transition:all .15s}
+.btn-logout:hover{background:var(--re);border-color:var(--re);color:#fff}
 .tab-bar{display:flex;background:var(--sf);border-bottom:1px solid var(--bd)}
 .tab-btn{flex:1;padding:.7rem;text-align:center;cursor:pointer;font-size:.85rem;color:var(--mu);border-bottom:2px solid transparent;transition:all .15s}
 .tab-btn.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:600}
 .tab-pane{display:none;flex:1}.tab-pane.active{display:block}
 .content{padding:1rem}
 .card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:1rem;margin-bottom:.875rem}
-.card-title{font-weight:600;font-size:.9rem;margin-bottom:.75rem}
+.card-title{font-weight:600;font-size:.9rem}
+.card-hdr-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+.qr-toggle-btn{background:var(--sf2);border:1px solid var(--bd);color:var(--mu);border-radius:6px;padding:.3rem .65rem;cursor:pointer;font-size:.8rem;transition:all .15s}
+.qr-toggle-btn.qr-active{background:rgba(99,102,241,.18);border-color:var(--ac);color:var(--ac)}
+.qr-section{border-radius:10px;overflow:hidden;background:#000;position:relative;margin-bottom:.75rem;min-height:200px}
+.qr-vp{width:100%}
+.qr-vp video{width:100%!important;border-radius:0!important;display:block}
+.qr-vp img{display:none!important}
+.qr-vp button{display:none!important}
+.qr-status-bar{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);color:#fff;padding:.4rem .75rem;font-size:.75rem;text-align:center;display:flex;align-items:center;justify-content:center;gap:.4rem}
+.qr-or{text-align:center;font-size:.72rem;color:var(--mu);margin:.5rem 0;user-select:none}
+.qr-success{background:rgba(34,197,94,.3)!important}
 .scan-area{position:relative}
 .scan-input{width:100%;padding:.75rem 1rem;background:var(--bg);border:2px solid var(--bd);border-radius:8px;color:var(--tx);font-size:1rem;outline:none;text-align:center;font-weight:600;letter-spacing:.05em}
 .scan-input:focus{border-color:var(--ac)}
@@ -41,7 +55,7 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
 .btn{display:flex;align-items:center;justify-content:center;gap:.35rem;width:100%;padding:.7rem;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:600;transition:all .15s}
 .btn-pr{background:var(--ac);color:#fff}.btn-pr:hover:not(:disabled){background:#4f46e5}
 .btn-ok{background:var(--gr);color:#fff}.btn-ok:hover:not(:disabled){background:#16a34a}
-.btn-ng{background:var(--re);color:#fff}
+.btn-ng{background:var(--re);color:#fff}.btn-ng:hover:not(:disabled){background:#dc2626}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn-sec{background:var(--sf2);border:1px solid var(--bd);color:var(--tx)}
 .fg2 label{display:block;font-size:.78rem;color:var(--mu);margin-bottom:.28rem}
@@ -59,151 +73,136 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
 @keyframes sp{to{transform:rotate(360deg)}}
 .empty-state{text-align:center;padding:2.5rem 1rem;color:var(--mu)}
 .empty-icon{font-size:2.5rem;margin-bottom:.5rem}
-
-/* ── QR Scanner ─────────────────────────────────── */
-.qr-btn{position:absolute;right:.5rem;top:50%;transform:translateY(-50%);background:var(--ac);border:none;border-radius:6px;color:#fff;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.1rem;flex-shrink:0}
-.qr-btn:hover{background:#4f46e5}
-.scan-area{position:relative}
-.scan-input{padding-right:3rem!important}
-.qr-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:500;flex-direction:column;align-items:center;justify-content:center}
-.qr-modal.open{display:flex}
-.qr-box{position:relative;width:min(85vw,340px);aspect-ratio:1;border-radius:12px;overflow:hidden;background:#000}
-.qr-corners{position:absolute;inset:0;pointer-events:none;z-index:2}
-.qr-corners::before,.qr-corners::after{content:'';position:absolute;width:40px;height:40px;border-color:#6366f1;border-style:solid;border-radius:4px}
-.qr-corners::before{top:10px;left:10px;border-width:3px 0 0 3px}
-.qr-corners::after{bottom:10px;right:10px;border-width:0 3px 3px 0}
-.qr-corner-tr{position:absolute;top:10px;right:10px;width:40px;height:40px;border:3px solid #6366f1;border-radius:4px;border-bottom:none;border-left:none;z-index:2}
-.qr-corner-bl{position:absolute;bottom:10px;left:10px;width:40px;height:40px;border:3px solid #6366f1;border-radius:4px;border-top:none;border-right:none;z-index:2}
-.qr-line{position:absolute;left:10px;right:10px;height:2px;background:linear-gradient(90deg,transparent,#6366f1,transparent);z-index:2;animation:qrscan 2s linear infinite}
-@keyframes qrscan{0%{top:10px}100%{top:calc(100% - 12px)}}
-#qrVideo{width:100%;height:100%;object-fit:cover}
-.qr-hint{color:rgba(255,255,255,.8);font-size:.82rem;margin-top:1rem;text-align:center}
-.qr-close{margin-top:1.25rem;background:var(--sf);border:1px solid var(--bd);color:var(--tx);padding:.55rem 1.5rem;border-radius:8px;cursor:pointer;font-size:.88rem}
-.qr-status{color:#fff;font-size:.8rem;margin-top:.6rem;min-height:1.2em;text-align:center}
-.qr-success-flash{animation:qrflash .35s ease}
-@keyframes qrflash{0%,100%{opacity:1}50%{opacity:0}}
-<link rel='stylesheet' href='css/wms-animate.css'>
-</style></head><body>
-<div class='app'>
-<div class='topbar'><span class='topbar-title'>🏭 Thủ Kho WMS</span><span class='topbar-user' id='topUser'></span></div>
-<div class='tab-bar'>
-  <div class='tab-btn active' data-tab='inbound'>📥 Nhập xe</div>
-  <div class='tab-btn' data-tab='outbound'>🚚 Xuất xe</div>
-  <div class='tab-btn' data-tab='inventory'>📋 Tồn kho</div>
+</style>
+<link rel="stylesheet" href="css/wms-animate.css">
+</head>
+<body>
+<div class="app">
+<!-- TOPBAR -->
+<div class="topbar">
+  <span class="topbar-title">&#127981; Thủ Kho WMS</span>
+  <div style="display:flex;align-items:center;gap:.75rem">
+    <span class="topbar-user" id="topUser"></span>
+    <button class="btn-logout" id="btnLogout" onclick="AUTH.logout()" title="Đăng xuất">&#9167;</button>
+  </div>
 </div>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <div class="tab-btn active" data-tab="inbound">&#128229; Nhập xe</div>
+  <div class="tab-btn" data-tab="outbound">&#128666; Xuất xe</div>
+  <div class="tab-btn" data-tab="inventory">&#128203; Tồn kho</div>
+</div>
+
 <!-- TAB: INBOUND -->
-<div class='tab-pane active' id='tab-inbound'>
-  <div class='content'>
-    <div class='card'>
-      <div class='card-title'>&#128229; Nh&#7853;p kho theo VIN</div>
-      <div class='scan-area'>
-        <input class='scan-input' id='ibVin' placeholder='Nh&#7853;p VIN ho&#7863;c nh&#7845;n &#128247; qu&#233;t QR...' maxlength='17'>
-        <button class='qr-btn' id='btnQrIb' title='Qu&#233;t m&#227; QR / Barcode'>&#128247;</button>
-        <div class='scan-hint'>Nh&#7845;n Enter sau khi nh&#7853;p, ho&#7863;c nh&#7845;n &#128247; để mở camera</div>
+<div class="tab-pane active" id="tab-inbound">
+  <div class="content">
+    <div class="card">
+      <div class="card-hdr-row">
+        <span class="card-title">&#128229; Nhập kho theo VIN</span>
+        <button class="qr-toggle-btn qr-active" id="btnToggleQrIb" onclick="toggleQR('inbound')">&#128247; Camera</button>
       </div>
-      <div id='ibVehicleInfo' style='display:none'></div>
-    </div>
-    <div class='card' id='ibLocationCard' style='display:none'>
-      <div class='card-title'>&#128205; Ch&#7885;n v&#7883; tr&#237; kho</div>
-      <div class='loc-grid'>
-        <div class='fg'><label>Kho *</label><select id='ibWh'><option value=''>-- Ch&#7885;n kho --</option></select></div>
-        <div class='fg'><label>Khu *</label><select id='ibZone'><option value=''>-- Ch&#7885;n khu --</option></select></div>
-        <div class='fg'><label>D&#227;y *</label><select id='ibRow'><option value=''>-- Ch&#7885;n d&#227;y --</option></select></div>
-        <div class='fg'><label>&#212; *</label><select id='ibSlot'><option value=''>-- Ch&#7885;n &#244; --</option></select></div>
+      <div id="ibQrSection" class="qr-section">
+        <div id="qrInlineIb" class="qr-vp"></div>
+        <div class="qr-status-bar" id="ibQrStatus"><span class="spin"></span> Đang khởi động camera...</div>
       </div>
-      <div style='font-size:.75rem;color:var(--mu);margin-bottom:.75rem' id='ibLocStatus'></div>
+      <div class="qr-or">── hoặc nhập VIN thủ công ──</div>
+      <div class="scan-area">
+        <input class="scan-input" id="ibVin" placeholder="Nhập VIN (17 ký tự)..." maxlength="17" autocomplete="off" autocapitalize="characters">
+        <div class="scan-hint">Nhấn Enter để tra cứu</div>
+      </div>
+      <div id="ibVehicleInfo" style="display:none"></div>
     </div>
-    <div class='card' id='ibPhotoCard' style='display:none'>
-      <div class='card-title'>&#128247; &#7842;nh ki&#7875;m tra (t&#7889;i &#273;a 10 t&#7845;m)</div>
-      <div class='img-count' id='ibImgCount'>0 / 10 &#7843;nh</div>
-      <div class='img-upload-area' id='ibImgGrid'></div>
-      <input type='file' id='ibFileInput' accept='image/*' multiple style='display:none'>
+    <div class="card" id="ibLocationCard" style="display:none">
+      <div class="card-title" style="margin-bottom:.75rem">&#128205; Chọn vị trí kho</div>
+      <div class="loc-grid">
+        <div class="fg"><label>Kho *</label><select id="ibWh"><option value="">-- Chọn kho --</option></select></div>
+        <div class="fg"><label>Khu *</label><select id="ibZone"><option value="">-- Chọn khu --</option></select></div>
+        <div class="fg"><label>Dãy *</label><select id="ibRow"><option value="">-- Chọn dãy --</option></select></div>
+        <div class="fg"><label>Ô *</label><select id="ibSlot"><option value="">-- Chọn ô --</option></select></div>
+      </div>
+      <div style="font-size:.75rem;color:var(--mu)" id="ibLocStatus"></div>
     </div>
-    <button class='btn btn-ok' id='btnIbSubmit' style='display:none' disabled>
-      &#9989; X&#225;c nh&#7853;n nh&#7853;p kho
-    </button>
+    <div class="card" id="ibPhotoCard" style="display:none">
+      <div class="card-title" style="margin-bottom:.5rem">&#128247; Ảnh kiểm tra (tối đa 10 tấm)</div>
+      <div class="img-count" id="ibImgCount">0 / 10 ảnh</div>
+      <div class="img-upload-area" id="ibImgGrid"></div>
+      <input type="file" id="ibFileInput" accept="image/*" multiple style="display:none">
+    </div>
+    <button class="btn btn-ok" id="btnIbSubmit" style="display:none" disabled>&#9989; Xác nhận nhập kho</button>
   </div>
 </div>
 
 <!-- TAB: OUTBOUND -->
-<div class='tab-pane' id='tab-outbound'>
-  <div class='content'>
-    <div class='card'>
-      <div class='card-title'>&#128666; Xu&#7845;t kho theo VIN</div>
-      <div class='scan-area'>
-        <input class='scan-input' id='obVin' placeholder='Nh&#7853;p VIN ho&#7863;c nh&#7845;n &#128247; qu&#233;t QR...' maxlength='17'>
-        <button class='qr-btn' id='btnQrOb' title='Qu&#233;t m&#227; QR / Barcode'>&#128247;</button>
-        <div class='scan-hint'>Nh&#7845;n Enter sau khi nh&#7853;p, ho&#7863;c nh&#7845;n &#128247; để mở camera</div>
+<div class="tab-pane" id="tab-outbound">
+  <div class="content">
+    <div class="card">
+      <div class="card-hdr-row">
+        <span class="card-title">&#128666; Xuất kho theo VIN</span>
+        <button class="qr-toggle-btn qr-active" id="btnToggleQrOb" onclick="toggleQR('outbound')">&#128247; Camera</button>
       </div>
-      <div id='obVehicleInfo' style='display:none'></div>
-    </div>
-    <div class='card' id='obFormCard' style='display:none'>
-      <div class='card-title'>&#128196; Th&#244;ng tin xu&#7845;t kho</div>
-      <div class='fg2'>
-        <label>Ng&#432;&#7901;i giao xe *</label>
-        <input id='obDeliverer' placeholder='H&#7885; t&#234;n ng&#432;&#7901;i giao...'>
-        <label>Ghi ch&#250;</label>
-        <textarea id='obNote' rows='2' placeholder='Ghi ch&#250; th&#234;m (n&#7871;u c&#243;)...'></textarea>
+      <div id="obQrSection" class="qr-section">
+        <div id="qrInlineOb" class="qr-vp"></div>
+        <div class="qr-status-bar" id="obQrStatus"><span class="spin"></span> Đang khởi động camera...</div>
       </div>
-      <div class='card-title' style='margin-top:.25rem'>&#128247; &#7842;nh gi&#7845;y x&#225;c nh&#7853;n GDKD</div>
-      <div class='img-count' id='obImgCount'>0 / 3 &#7843;nh</div>
-      <div class='img-upload-area' id='obImgGrid' style='grid-template-columns:repeat(3,1fr)'></div>
-      <input type='file' id='obFileInput' accept='image/*' multiple style='display:none'>
+      <div class="qr-or">── hoặc nhập VIN thủ công ──</div>
+      <div class="scan-area">
+        <input class="scan-input" id="obVin" placeholder="Nhập VIN (17 ký tự)..." maxlength="17" autocomplete="off" autocapitalize="characters">
+        <div class="scan-hint">Nhấn Enter để tra cứu</div>
+      </div>
+      <div id="obVehicleInfo" style="display:none"></div>
     </div>
-    <button class='btn btn-ng' id='btnObSubmit' style='display:none' disabled>
-      &#128666; X&#225;c nh&#7853;n xu&#7845;t kho
-    </button>
+    <div class="card" id="obFormCard" style="display:none">
+      <div class="card-title" style="margin-bottom:.65rem">&#128196; Thông tin xuất kho</div>
+      <div class="fg2">
+        <label>Người giao xe *</label>
+        <input id="obDeliverer" placeholder="Họ tên người giao...">
+        <label>Ghi chú</label>
+        <textarea id="obNote" rows="2" placeholder="Ghi chú thêm (nếu có)..."></textarea>
+      </div>
+      <div class="card-title" style="margin-top:.25rem;margin-bottom:.5rem">&#128247; Ảnh giấy xác nhận GDKD</div>
+      <div class="img-count" id="obImgCount">0 / 3 ảnh</div>
+      <div class="img-upload-area" id="obImgGrid" style="grid-template-columns:repeat(3,1fr)"></div>
+      <input type="file" id="obFileInput" accept="image/*" multiple style="display:none">
+    </div>
+    <button class="btn btn-ng" id="btnObSubmit" style="display:none" disabled>&#128666; Xác nhận xuất kho</button>
   </div>
 </div>
 
 <!-- TAB: INVENTORY -->
-<div class='tab-pane' id='tab-inventory'>
-  <div class='content'>
-    <div class='card'>
-      <div class='fg'><label>T&#236;m ki&#7871;m</label>
-        <input id='invSearch' placeholder='VIN, model, v&#7883; tr&#237;...' style='margin-bottom:.6rem'>
+<div class="tab-pane" id="tab-inventory">
+  <div class="content">
+    <div class="card">
+      <div class="fg" style="margin-bottom:.75rem">
+        <label>Tìm kiếm</label>
+        <input id="invSearch" placeholder="VIN, model, vị trí...">
       </div>
-      <div id='invList'><div class='empty-state'><div class='empty-icon'>&#128663;</div><div>&#272;ang t&#7843;i...</div></div></div>
+      <div id="invList"><div class="empty-state"><div class="empty-icon">&#128663;</div><div>Đang tải...</div></div></div>
     </div>
   </div>
 </div>
+
 </div><!-- /app -->
-<!-- QR SCANNER MODAL -->
-<div class='qr-modal' id='qrModal'>
-  <div class='qr-box' id='qrBox'>
-    <div id='qrReader'></div>
-    <div class='qr-corners'></div>
-    <div class='qr-corner-tr'></div>
-    <div class='qr-corner-bl'></div>
-    <div class='qr-line' id='qrLine'></div>
-  </div>
-  <div class='qr-status' id='qrStatus'>&#128269; Đang khởi động camera...</div>
-  <div class='qr-hint'>Hướng camera vào mã QR / mã vạch của xe</div>
-  <button class='qr-close' id='qrClose'>&#10005; Đóng camera</button>
-</div>
-
-<div class='toast-wrap' id='toastWrap'></div>
-<script src='js/wms-ui.js'></script>
-<script src='js/api-client.js'></script>
-<script src='js/auth.js'></script>
-<script src='js/drive-upload.js'></script>
+<div class="toast-wrap" id="toastWrap"></div>
+<!-- CDN: standalone script BEFORE main script block -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="js/wms-ui.js"></script>
+<script src="js/api-client.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/drive-upload.js"></script>
 <script>
+// ============================================================
+//  WMS Warehouse — ALL JS in ONE block, no nested script tags
+// ============================================================
+
+// Auth check
 const _user = AUTH.requireRole('warehouse');
-if(_user) document.getElementById('topUser').textContent = _user.fullName || _user.username;
+if (_user) {
+  const uEl = document.getElementById('topUser');
+  if (uEl) uEl.textContent = _user.fullName || _user.username;
+}
 
-// ---- TABS ----
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const tab = btn.dataset.tab;
-    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
-    if(tab === 'inventory') loadInventory();
-  });
-});
-
-// ---- TOAST ----
+// ---- TOAST ------------------------------------------------
 function showToast(msg, type) {
   type = type || 'success';
   const wrap = document.getElementById('toastWrap');
@@ -214,161 +213,225 @@ function showToast(msg, type) {
   setTimeout(() => d.remove(), 3500);
 }
 
+// ---- STATUS BADGE -----------------------------------------
 function statusBadge(s) {
-  const map = {'V\u1eacN T\u1ea2I':'bs-vt','\u0110\u00c3 V\u1ec0':'bs-dv','\u0110\u00c3 XU\u1ea4T':'bs-dx'};
-  return '<span class="bs ' + (map[s]||'bs-dv') + '">' + (s||'') + '</span>';
+  const map = {
+    'VẬN TẢI': 'bs-vt',
+    'ĐÃ VỀ': 'bs-dv',
+    'ĐÃ XUẤT': 'bs-dx'
+  };
+  return '<span class="bs ' + (map[s] || 'bs-dv') + '">' + (s || '') + '</span>';
 }
 
-// ---- IMAGE HELPER ----
+// ---- IMAGE HELPERS -----------------------------------------
 function makeImgGrid(containerId, inputId, maxPhotos, photos) {
   const grid = document.getElementById(containerId);
   const input = document.getElementById(inputId);
+  if (!grid) return;
   grid.innerHTML = '';
   photos.forEach((p, i) => {
     const slot = document.createElement('div');
     slot.className = 'img-slot';
     slot.innerHTML = '<img src="' + p.preview + '" alt="photo"><button class="rm" data-i="' + i + '">&times;</button>';
-    slot.querySelector('.rm').onclick = (e) => { e.stopPropagation(); photos.splice(i,1); makeImgGrid(containerId, inputId, maxPhotos, photos); updateImgCount(containerId, inputId, maxPhotos, photos); };
+    slot.querySelector('.rm').onclick = (e) => {
+      e.stopPropagation();
+      photos.splice(i, 1);
+      const cntId = containerId === 'ibImgGrid' ? 'ibImgCount' : 'obImgCount';
+      makeImgGrid(containerId, inputId, maxPhotos, photos);
+      updateImgCount(cntId, inputId, maxPhotos, photos);
+    };
     grid.appendChild(slot);
   });
-  if(photos.length < maxPhotos) {
+  if (photos.length < maxPhotos) {
     const add = document.createElement('div');
     add.className = 'img-slot';
     add.innerHTML = '<span class="add-icon">+</span>';
-    add.onclick = () => { input.value=''; input.click(); };
+    add.onclick = () => { input.value = ''; input.click(); };
     grid.appendChild(add);
   }
 }
 
 function updateImgCount(countId, inputId, maxPhotos, photos) {
-  document.getElementById(countId).textContent = photos.length + ' / ' + maxPhotos + ' \u1ea3nh';
+  const el = document.getElementById(countId);
+  if (el) el.textContent = photos.length + ' / ' + maxPhotos + ' ảnh';
 }
 
-// ---- INBOUND ----
-let ibPhotos = [], ibVehicleData = null, ibWarehouses = [];
-
-const ibVinInput = document.getElementById('ibVin');
-ibVinInput.addEventListener('keydown', async e => {
-  if(e.key === 'Enter') {
-    const vin = ibVinInput.value.trim().toUpperCase();
-    ibVinInput.classList.add('scanning');
-    if(!vin) return;
-    await lookupVehicle(vin, 'inbound');
-  }
+// ---- VEHICLE INFO RENDERER --------------------------------
+function renderVehicleInfo(v, elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.innerHTML =
+    '<div class="vehicle-info">' +
+    '<div class="vi-row"><span class="vi-label">Số VIN</span><span class="vi-val"><b>' + v.VIN + '</b></span></div>' +
+    '<div class="vi-row"><span class="vi-label">Model</span><span class="vi-val">' + (v.MODEL || '') + '</span></div>' +
+    '<div class="vi-row"><span class="vi-label">Màu</span><span class="vi-val">' + (v.COLOR || '') + '</span></div>' +
+    '<div class="vi-row"><span class="vi-label">Phiên bản</span><span class="vi-val">' + (v.VERSION || '') + '</span></div>' +
+    '<div class="vi-row"><span class="vi-label">Năm</span><span class="vi-val">' + (v.YEAR || '') + '</span></div>' +
+    '<div class="vi-row"><span class="vi-label">Trạng thái</span><span class="vi-val">' + statusBadge(v.WAREHOUSE_STATUS) + '</span></div>' +
+    '</div>';
+}
+// ---- TABS ------------------------------------------------
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    if (tab === 'inbound') startQR('inbound');
+    else if (tab === 'outbound') startQR('outbound');
+    else { stopQR(); loadInventory(); }
+  });
 });
 
+// ---- INLINE QR SCANNER -----------------------------------
+let _qrScanner = null;
+let _qrTarget = null; // 'inbound' | 'outbound'
+
+async function startQR(target) {
+  if (_qrTarget === target && _qrScanner) return;
+  await stopQR();
+  const vp = document.getElementById(target === 'inbound' ? 'qrInlineIb' : 'qrInlineOb');
+  const statusEl = document.getElementById(target === 'inbound' ? 'ibQrStatus' : 'obQrStatus');
+  const section = document.getElementById(target === 'inbound' ? 'ibQrSection' : 'obQrSection');
+  if (!vp || !section || section.style.display === 'none') return;
+  statusEl.innerHTML = '<span class="spin"></span> Đang khởi động camera...';
+  if (typeof Html5Qrcode === 'undefined') {
+    statusEl.textContent = '❌ Thư viện QR chưa tải. Kiểm tra kết nối mạng.';
+    return;
+  }
+  try {
+    _qrScanner = new Html5Qrcode(vp.id, { verbose: false });
+    _qrTarget = target;
+    await _qrScanner.start(
+      { facingMode: 'environment' },
+      {
+        fps: 12,
+        qrbox: { width: 230, height: 160 },
+        aspectRatio: 1.77,
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.QR_CODE,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.DATA_MATRIX
+        ],
+        experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+      },
+      (decoded) => onQRDetected(decoded, target),
+      () => {}
+    );
+    statusEl.textContent = '📷 Hướng camera vào mã QR / barcode trên xe';
+  } catch (err) {
+    _qrScanner = null; _qrTarget = null;
+    const isPerm = err.toString().includes('ermission') || err.toString().includes('NotAllowed');
+    statusEl.innerHTML = isPerm
+      ? '🔒 Chưa cấp quyền camera. <a href="#" onclick="reqCamPerm('' + target + '');return false" style="color:var(--ac)">Cấp quyền ngay</a>'
+      : '📷 Không mở được camera — nhập VIN thủ công bên dưới.';
+  }
+}
+
+async function stopQR() {
+  if (_qrScanner) {
+    try { await _qrScanner.stop(); _qrScanner.clear(); } catch(e) {}
+    _qrScanner = null; _qrTarget = null;
+  }
+}
+
+async function reqCamPerm(target) {
+  try {
+    await navigator.mediaDevices.getUserMedia({ video: true });
+    startQR(target);
+  } catch(e) {
+    const sid = target === 'inbound' ? 'ibQrStatus' : 'obQrStatus';
+    document.getElementById(sid).textContent = '❌ Bị từ chối quyền camera. Vui lòng cho phép trong cài đặt trình duyệt.';
+  }
+}
+
+function onQRDetected(decodedText, target) {
+  const raw = decodedText.trim().toUpperCase();
+  const match = raw.match(/[A-HJ-NPR-Z0-9]{17}/);
+  const vin = match ? match[0] : raw;
+  if (vin.length < 8) return;
+  stopQR();
+  const sid = target === 'inbound' ? 'ibQrStatus' : 'obQrStatus';
+  const section = document.getElementById(target === 'inbound' ? 'ibQrSection' : 'obQrSection');
+  document.getElementById(sid).textContent = '✅ Đã quét: ' + vin;
+  if (section) section.classList.add('qr-success');
+  const inp = document.getElementById(target === 'inbound' ? 'ibVin' : 'obVin');
+  inp.value = vin;
+  lookupVehicle(vin, target);
+}
+
+function toggleQR(target) {
+  const section = document.getElementById(target === 'inbound' ? 'ibQrSection' : 'obQrSection');
+  const btn = document.getElementById(target === 'inbound' ? 'btnToggleQrIb' : 'btnToggleQrOb');
+  if (section.style.display === 'none') {
+    section.style.display = '';
+    btn.classList.add('qr-active');
+    startQR(target);
+  } else {
+    stopQR();
+    section.style.display = 'none';
+    btn.classList.remove('qr-active');
+  }
+}
+
+// Auto-start on page load (default tab = inbound)
+window.addEventListener('load', () => setTimeout(() => startQR('inbound'), 400));
+// ---- VEHICLE LOOKUP --------------------------------------
 async function lookupVehicle(vin, mode) {
   const infoEl = document.getElementById(mode === 'inbound' ? 'ibVehicleInfo' : 'obVehicleInfo');
   UI.hide(infoEl);
   try {
     const res = await API.vehicles.getByVin(vin);
-    if(!res.success || !res.data) { showToast('Kh\u00f4ng t\u00ecm th\u1ea5y xe: ' + vin, 'error'); return; }
+    if (!res.success || !res.data) {
+      showToast('Không tìm thấy xe: ' + vin, 'error');
+      return;
+    }
     const v = res.data;
-    if(mode === 'inbound') {
-      if(v.WAREHOUSE_STATUS !== 'V\u1eacN T\u1ea2I') { showToast('Xe kh\u00f4ng \u1edf tr\u1ea1ng th\u00e1i V\u1eacN T\u1ea2I! Hi\u1ec7n t\u1ea1i: ' + v.WAREHOUSE_STATUS, 'error'); return; }
+    if (mode === 'inbound') {
+      if (v.WAREHOUSE_STATUS !== 'VẬN TẢI') {
+        showToast('Xe không ở trạng thái VẬN TẢI! Hiện tại: ' + v.WAREHOUSE_STATUS, 'error');
+        return;
+      }
       ibVehicleData = v;
       renderVehicleInfo(v, 'ibVehicleInfo');
-      UI.show(infoEl,'anim-slide-up');
-      UI.show(document.getElementById('ibLocationCard'),'anim-slide-up');
-      UI.show(document.getElementById('ibPhotoCard'),'anim-slide-up');
-      UI.showFlex(document.getElementById('btnIbSubmit'),'anim-pop-sm');
+      UI.show(infoEl, 'anim-slide-up');
+      UI.show(document.getElementById('ibLocationCard'), 'anim-slide-up');
+      UI.show(document.getElementById('ibPhotoCard'), 'anim-slide-up');
+      UI.showFlex(document.getElementById('btnIbSubmit'), 'anim-pop-sm');
       ibPhotos = [];
       makeImgGrid('ibImgGrid', 'ibFileInput', 10, ibPhotos);
       updateImgCount('ibImgCount', 'ibFileInput', 10, ibPhotos);
       await loadWarehouseOptions();
+      updateSubmitBtn('inbound');
     } else {
-      if(v.WAREHOUSE_STATUS !== '\u0110\u00c3 V\u1ec0') { showToast('Xe kh\u00f4ng \u1edf tr\u1ea1ng th\u00e1i \u0110\u00c3 V\u1ec0! Hi\u1ec7n t\u1ea1i: ' + v.WAREHOUSE_STATUS, 'error'); return; }
+      if (v.WAREHOUSE_STATUS !== 'ĐÃ VỀ') {
+        showToast('Xe không ở trạng thái ĐÃ VỀ! Hiện tại: ' + v.WAREHOUSE_STATUS, 'error');
+        return;
+      }
       obVehicleData = v;
       renderVehicleInfo(v, 'obVehicleInfo');
-      UI.show(infoEl,'anim-slide-up');
-      UI.show(document.getElementById('obFormCard'),'anim-slide-up');
-      UI.showFlex(document.getElementById('btnObSubmit'),'anim-pop-sm');
+      UI.show(infoEl, 'anim-slide-up');
+      UI.show(document.getElementById('obFormCard'), 'anim-slide-up');
+      UI.showFlex(document.getElementById('btnObSubmit'), 'anim-pop-sm');
       obPhotos = [];
       makeImgGrid('obImgGrid', 'obFileInput', 3, obPhotos);
       updateImgCount('obImgCount', 'obFileInput', 3, obPhotos);
+      updateSubmitBtn('outbound');
     }
-    updateSubmitBtn(mode);
-  } catch(err) { showToast('L\u1ed7i: ' + err.message, 'error'); }
+  } catch(err) { showToast('Lỗi: ' + err.message, 'error'); }
 }
 
-function renderVehicleInfo(v, elId) {
-  const el = document.getElementById(elId);
-  el.innerHTML = '<div class="vehicle-info">' +
-    '<div class="vi-row"><span class="vi-label">S\u1ed1 VIN</span><span class="vi-val"><b>' + v.VIN + '</b></span></div>' +
-    '<div class="vi-row"><span class="vi-label">Model</span><span class="vi-val">' + (v.MODEL||'') + '</span></div>' +
-    '<div class="vi-row"><span class="vi-label">M\u00e0u</span><span class="vi-val">' + (v.COLOR||'') + '</span></div>' +
-    '<div class="vi-row"><span class="vi-label">Phi\u00ean b\u1ea3n</span><span class="vi-val">' + (v.VERSION||'') + '</span></div>' +
-    '<div class="vi-row"><span class="vi-label">N\u0103m</span><span class="vi-val">' + (v.YEAR||'') + '</span></div>' +
-    '<div class="vi-row"><span class="vi-label">Tr\u1ea1ng th\u00e1i</span><span class="vi-val">' + statusBadge(v.WAREHOUSE_STATUS) + '</span></div>' +
-    '</div>';
-}
-async function loadWarehouseOptions() {
-  try {
-    const res = await API.warehouses.list();
-    if(!res.success) return;
-    ibWarehouses = res.data || [];
-    const sel = document.getElementById('ibWh');
-    sel.innerHTML = '<option value="">-- Ch\u1ecdn kho --</option>' + ibWarehouses.map(w => '<option value="' + w.ID + '">' + w.NAME + '</option>').join('');
-  } catch(e) {}
-}
-
-document.getElementById('ibWh').onchange = async function() {
-  const whId = this.value;
-  ['ibZone','ibRow','ibSlot'].forEach(id => { document.getElementById(id).innerHTML = '<option value="">--</option>'; });
-  if(!whId) return;
-  try {
-    const res = await API.locations.getZones(whId);
-    if(res.success) {
-      document.getElementById('ibZone').innerHTML = '<option value="">-- Ch\u1ecdn khu --</option>' + (res.data||[]).map(z => '<option value="' + z + '">' + z + '</option>').join('');
-    }
-  } catch(e) {}
-  updateSubmitBtn('inbound');
-};
-document.getElementById('ibZone').onchange = async function() {
-  const whId = document.getElementById('ibWh').value;
-  const zone = this.value;
-  document.getElementById('ibRow').innerHTML = '<option value="">-- Ch\u1ecdn d\u00e3y --</option>';
-  document.getElementById('ibSlot').innerHTML = '<option value="">-- Ch\u1ecdn \u00f4 --</option>';
-  if(!whId || !zone) return;
-  try {
-    const res = await API.locations.getRows(whId, zone);
-    if(res.success) document.getElementById('ibRow').innerHTML = '<option value="">-- Ch\u1ecdn d\u00e3y --</option>' + (res.data||[]).map(r => '<option value="' + r + '">' + r + '</option>').join('');
-  } catch(e) {}
-};
-document.getElementById('ibRow').onchange = async function() {
-  const whId = document.getElementById('ibWh').value;
-  const zone = document.getElementById('ibZone').value;
-  const row = this.value;
-  document.getElementById('ibSlot').innerHTML = '<option value="">-- Ch\u1ecdn \u00f4 --</option>';
-  if(!whId || !zone || !row) return;
-  try {
-    const res = await API.locations.getAvailableSlots(whId, zone, row);
-    if(res.success) document.getElementById('ibSlot').innerHTML = '<option value="">-- Ch\u1ecdn \u00f4 --</option>' + (res.data||[]).map(s => '<option value="' + s.id + '"' + (s.occupied?' disabled':'') + '>' + s.id + (s.occupied?' (\u0111\u00e3 c\u00f3 xe)':'') + '</option>').join('');
-  } catch(e) {}
-  updateSubmitBtn('inbound');
-};
-document.getElementById('ibSlot').onchange = () => updateSubmitBtn('inbound');
-
-document.getElementById('ibFileInput').onchange = function(e) {
-  const files = Array.from(e.target.files);
-  const remaining = 10 - ibPhotos.length;
-  files.slice(0, remaining).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = ev => {
-      ibPhotos.push({file, preview: ev.target.result});
-      makeImgGrid('ibImgGrid', 'ibFileInput', 10, ibPhotos);
-      updateImgCount('ibImgCount', 'ibFileInput', 10, ibPhotos);
-    };
-    reader.readAsDataURL(file);
-  });
-  if(files.length > remaining) showToast('Ch\u1ec9 th\u00eam \u0111\u01b0\u1ee3c ' + remaining + ' \u1ea3nh n\u1eefa', 'info');
-};
-
+// ---- UPDATE SUBMIT BUTTON --------------------------------
 function updateSubmitBtn(mode) {
-  if(mode === 'inbound') {
+  if (mode === 'inbound') {
     const btn = document.getElementById('btnIbSubmit');
     const hasVin = ibVehicleData !== null;
-    const hasLoc = document.getElementById('ibWh').value && document.getElementById('ibZone').value && document.getElementById('ibRow').value && document.getElementById('ibSlot').value;
+    const hasLoc = document.getElementById('ibWh').value &&
+                   document.getElementById('ibZone').value &&
+                   document.getElementById('ibRow').value &&
+                   document.getElementById('ibSlot').value;
     btn.disabled = !(hasVin && hasLoc);
   } else {
     const btn = document.getElementById('btnObSubmit');
@@ -377,274 +440,252 @@ function updateSubmitBtn(mode) {
     btn.disabled = !(hasVin && hasDeliverer);
   }
 }
+// ---- INBOUND STATE ---------------------------------------
+let ibPhotos = [], ibVehicleData = null, ibWarehouses = [];
 
-document.getElementById('btnIbSubmit').onclick = async function() {
-  const wh = document.getElementById('ibWh').value;
-  const zone = document.getElementById('ibZone').value;
-  const row = document.getElementById('ibRow').value;
-  const slot = document.getElementById('ibSlot').value;
-  if(!ibVehicleData || !wh || !zone || !row || !slot) { showToast('Vui l\u00f2ng \u0111i\u1ec1n \u0111\u1ee7 th\u00f4ng tin', 'error'); return; }
-  this.disabled = true;
-  this.innerHTML = '<span class="spin"></span> \u0110ang x\u1eed l\u00fd...';
+// VIN input enter key
+document.getElementById('ibVin').addEventListener('keydown', async e => {
+  if (e.key === 'Enter') {
+    const vin = e.target.value.trim().toUpperCase();
+    if (!vin) return;
+    await lookupVehicle(vin, 'inbound');
+  }
+});
+
+// Load warehouse options
+async function loadWarehouseOptions() {
   try {
-    showToast('\u23f3 \u0110ang upload \u1ea3nh...', 'info');
-    const photoUrls = await DRIVE.uploadMultiple(ibPhotos.map(p => p.file), ibVehicleData.VIN, 'INBOUND');
+    const res = await API.warehouses.list();
+    if (!res.success) return;
+    ibWarehouses = res.data || [];
+    const sel = document.getElementById('ibWh');
+    sel.innerHTML = '<option value="">-- Chọn kho --</option>' +
+      ibWarehouses.map(w => '<option value="' + w.ID + '">' + w.NAME + '</option>').join('');
+  } catch(e) {}
+}
+
+// Location dropdowns
+document.getElementById('ibWh').onchange = async function() {
+  const whId = this.value;
+  ['ibZone','ibRow','ibSlot'].forEach(id => {
+    document.getElementById(id).innerHTML = '<option value="">--</option>';
+  });
+  if (!whId) { updateSubmitBtn('inbound'); return; }
+  try {
+    const res = await API.locations.getZones(whId);
+    if (res.success) {
+      document.getElementById('ibZone').innerHTML =
+        '<option value="">-- Chọn khu --</option>' +
+        (res.data || []).map(z => '<option value="' + z + '">' + z + '</option>').join('');
+    }
+  } catch(e) {}
+  updateSubmitBtn('inbound');
+};
+
+document.getElementById('ibZone').onchange = async function() {
+  const whId = document.getElementById('ibWh').value;
+  const zone = this.value;
+  document.getElementById('ibRow').innerHTML = '<option value="">-- Chọn dãy --</option>';
+  document.getElementById('ibSlot').innerHTML = '<option value="">-- Chọn ô --</option>';
+  if (!whId || !zone) { updateSubmitBtn('inbound'); return; }
+  try {
+    const res = await API.locations.getRows(whId, zone);
+    if (res.success) {
+      document.getElementById('ibRow').innerHTML =
+        '<option value="">-- Chọn dãy --</option>' +
+        (res.data || []).map(r => '<option value="' + r + '">' + r + '</option>').join('');
+    }
+  } catch(e) {}
+  updateSubmitBtn('inbound');
+};
+
+document.getElementById('ibRow').onchange = async function() {
+  const whId = document.getElementById('ibWh').value;
+  const zone = document.getElementById('ibZone').value;
+  const row = this.value;
+  document.getElementById('ibSlot').innerHTML = '<option value="">-- Chọn ô --</option>';
+  if (!whId || !zone || !row) { updateSubmitBtn('inbound'); return; }
+  try {
+    const res = await API.locations.getAvailableSlots(whId, zone, row);
+    if (res.success) {
+      document.getElementById('ibSlot').innerHTML =
+        '<option value="">-- Chọn ô --</option>' +
+        (res.data || []).map(s =>
+          '<option value="' + s.id + '"' + (s.occupied ? ' disabled' : '') + '>' +
+          s.id + (s.occupied ? ' (đã có xe)' : '') + '</option>'
+        ).join('');
+    }
+  } catch(e) {}
+  updateSubmitBtn('inbound');
+};
+document.getElementById('ibSlot').onchange = () => updateSubmitBtn('inbound');
+
+// File input for inbound photos
+document.getElementById('ibFileInput').onchange = function(e) {
+  const files = Array.from(e.target.files);
+  const remaining = 10 - ibPhotos.length;
+  files.slice(0, remaining).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      ibPhotos.push({ file, preview: ev.target.result });
+      makeImgGrid('ibImgGrid', 'ibFileInput', 10, ibPhotos);
+      updateImgCount('ibImgCount', 'ibFileInput', 10, ibPhotos);
+    };
+    reader.readAsDataURL(file);
+  });
+  if (files.length > remaining) showToast('Chỉ thêm được ' + remaining + ' ảnh nữa', 'info');
+};
+// ---- INBOUND SUBMIT -------------------------------------
+document.getElementById('btnIbSubmit').onclick = async function() {
+  const wh   = document.getElementById('ibWh').value;
+  const zone = document.getElementById('ibZone').value;
+  const row  = document.getElementById('ibRow').value;
+  const slot = document.getElementById('ibSlot').value;
+  if (!ibVehicleData || !wh || !zone || !row || !slot) {
+    showToast('Vui lòng điền đủ thông tin', 'error');
+    return;
+  }
+  this.disabled = true;
+  this.innerHTML = '<span class="spin"></span> Đang xử lý...';
+  try {
+    if (ibPhotos.length > 0) showToast('⏳ Đang upload ảnh...', 'info');
+    const photoUrls = ibPhotos.length > 0
+      ? await DriveUpload.uploadPhotos(ibPhotos.map(p => p.file), ibVehicleData.VIN, 'INBOUND')
+      : [];
     const res = await API.warehouse.inbound({
       vin: ibVehicleData.VIN,
-      warehouseId: wh, zone, row, slot,
+      warehouseId: wh,
+      zone,
+      row,
+      slot,
       photos: photoUrls,
       performedBy: _user.username
     });
-    if(res.success) {
-      showToast('\u2705 Nh\u1eadp kho th\u00e0nh c\u00f4ng! ' + ibVehicleData.VIN + ' \u2192 ' + wh + '/' + zone + '/' + row + '/' + slot);
-      ibVehicleData = null; ibPhotos = [];
+    if (res.success) {
+      showToast('✅ Nhập kho thành công! ' + ibVehicleData.VIN + ' → ' + wh + '/' + zone + '/' + row + '/' + slot);
+      ibVehicleData = null;
+      ibPhotos = [];
       document.getElementById('ibVin').value = '';
+      document.getElementById('ibQrSection').classList.remove('qr-success');
       UI.hide(document.getElementById('ibVehicleInfo'));
       UI.hide(document.getElementById('ibLocationCard'));
       UI.hide(document.getElementById('ibPhotoCard'));
       UI.hide(document.getElementById('btnIbSubmit'));
-    } else { showToast(res.message, 'error'); }
-  } catch(e) { showToast('L\u1ed7i: ' + e.message, 'error'); }
+      setTimeout(() => startQR('inbound'), 300);
+    } else {
+      showToast(res.message || 'Lỗi không xác định', 'error');
+    }
+  } catch(e) { showToast('Lỗi: ' + e.message, 'error'); }
   this.disabled = false;
-  this.innerHTML = '\u2705 X\u00e1c nh\u1eadn nh\u1eadp kho';
+  this.innerHTML = '✅ Xác nhận nhập kho';
 };
-// ---- OUTBOUND ----
+
+// ---- OUTBOUND STATE -------------------------------------
 let obPhotos = [], obVehicleData = null;
 
-const obVinInput = document.getElementById('obVin');
-obVinInput.addEventListener('keydown', async e => {
-  if(e.key === 'Enter') {
-    const vin = obVinInput.value.trim().toUpperCase();
-    obVinInput.classList.add('scanning');
-    if(vin) await lookupVehicle(vin, 'outbound');
+// VIN input enter key
+document.getElementById('obVin').addEventListener('keydown', async e => {
+  if (e.key === 'Enter') {
+    const vin = e.target.value.trim().toUpperCase();
+    if (!vin) return;
+    await lookupVehicle(vin, 'outbound');
   }
 });
 
 document.getElementById('obDeliverer').oninput = () => updateSubmitBtn('outbound');
 
+// File input for outbound photos
 document.getElementById('obFileInput').onchange = function(e) {
   const files = Array.from(e.target.files);
   const remaining = 3 - obPhotos.length;
   files.slice(0, remaining).forEach(file => {
     const reader = new FileReader();
     reader.onload = ev => {
-      obPhotos.push({file, preview: ev.target.result});
+      obPhotos.push({ file, preview: ev.target.result });
       makeImgGrid('obImgGrid', 'obFileInput', 3, obPhotos);
       updateImgCount('obImgCount', 'obFileInput', 3, obPhotos);
     };
     reader.readAsDataURL(file);
   });
+  if (files.length > remaining) showToast('Chỉ thêm được ' + remaining + ' ảnh nữa', 'info');
 };
-
+// ---- OUTBOUND SUBMIT ------------------------------------
 document.getElementById('btnObSubmit').onclick = async function() {
   const deliverer = document.getElementById('obDeliverer').value.trim();
-  const note = document.getElementById('obNote').value.trim();
-  if(!obVehicleData || !deliverer) { showToast('Vui l\u00f2ng nh\u1eadp ng\u01b0\u1eddi giao xe', 'error'); return; }
+  const note      = document.getElementById('obNote').value.trim();
+  if (!obVehicleData || !deliverer) {
+    showToast('Vui lòng nhập người giao xe', 'error');
+    return;
+  }
   this.disabled = true;
-  this.innerHTML = '<span class="spin"></span> \u0110ang x\u1eed l\u00fd...';
+  this.innerHTML = '<span class="spin"></span> Đang xử lý...';
   try {
-    showToast('\u23f3 \u0110ang upload \u1ea3nh...', 'info');
-    const photoUrls = obPhotos.length ? await DRIVE.uploadMultiple(obPhotos.map(p => p.file), obVehicleData.VIN, 'OUTBOUND') : [];
+    if (obPhotos.length > 0) showToast('⏳ Đang upload ảnh...', 'info');
+    const photoUrls = obPhotos.length
+      ? await DriveUpload.uploadPhotos(obPhotos.map(p => p.file), obVehicleData.VIN, 'OUTBOUND')
+      : [];
     const res = await API.warehouse.outbound({
       vin: obVehicleData.VIN,
-      deliverer, note,
+      deliverer,
+      note,
       photos: photoUrls,
       performedBy: _user.username
     });
-    if(res.success) {
-      showToast('\u2705 Xu\u1ea5t kho th\u00e0nh c\u00f4ng! ' + obVehicleData.VIN);
-      obVehicleData = null; obPhotos = [];
+    if (res.success) {
+      showToast('✅ Xuất kho thành công! ' + obVehicleData.VIN);
+      obVehicleData = null;
+      obPhotos = [];
       document.getElementById('obVin').value = '';
+      document.getElementById('obQrSection').classList.remove('qr-success');
+      document.getElementById('obDeliverer').value = '';
+      document.getElementById('obNote').value = '';
       UI.hide(document.getElementById('obVehicleInfo'));
       UI.hide(document.getElementById('obFormCard'));
       UI.hide(document.getElementById('btnObSubmit'));
-      document.getElementById('obDeliverer').value = '';
-      document.getElementById('obNote').value = '';
-    } else { showToast(res.message, 'error'); }
-  } catch(e) { showToast('L\u1ed7i: ' + e.message, 'error'); }
+      setTimeout(() => startQR('outbound'), 300);
+    } else {
+      showToast(res.message || 'Lỗi không xác định', 'error');
+    }
+  } catch(e) { showToast('Lỗi: ' + e.message, 'error'); }
   this.disabled = false;
-  this.innerHTML = '\u{1f69a} X\u00e1c nh\u1eadn xu\u1ea5t kho';
+  this.innerHTML = '&#128666; Xác nhận xuất kho';
 };
 
-// ---- INVENTORY ----
+// ---- INVENTORY -------------------------------------------
 let invDebounce;
-document.getElementById('invSearch').oninput = () => { clearTimeout(invDebounce); invDebounce = setTimeout(loadInventory, 400); };
+document.getElementById('invSearch').oninput = () => {
+  clearTimeout(invDebounce);
+  invDebounce = setTimeout(loadInventory, 400);
+};
 
 async function loadInventory() {
   const search = document.getElementById('invSearch').value.trim();
   const el = document.getElementById('invList');
-  el.innerHTML = '<div class="empty-state"><div class="empty-icon">\u23f3</div><div>\u0110ang t\u1ea3i...</div></div>';
+  el.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div>Đang tải...</div></div>';
   try {
-    const res = await API.vehicles.list({warehouseStatus:'\u0110\u00c3 V\u1ec0', search, pageSize:50});
-    if(!res.success) { showToast(res.message, 'error'); return; }
-    const {items} = res.data;
-    if(!items.length) {
-      el.innerHTML = '<div class="empty-state"><div class="empty-icon">\u{1f697}</div><div>Kh\u00f4ng c\u00f3 xe trong kho</div></div>';
+    const res = await API.vehicles.list({
+      warehouseStatus: 'ĐÃ VỀ',
+      search,
+      pageSize: 50
+    });
+    if (!res.success) { showToast(res.message, 'error'); return; }
+    const items = (res.data && res.data.items) ? res.data.items : (res.data || []);
+    if (!items.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">&#128663;</div><div>Không có xe trong kho</div></div>';
       return;
     }
     el.innerHTML = items.map(v =>
       '<div class="vehicle-info" style="margin-bottom:.6rem">' +
       '<div class="vi-row"><span class="vi-label">VIN</span><span class="vi-val"><b>' + v.VIN + '</b></span></div>' +
-      '<div class="vi-row"><span class="vi-label">Model / M\u00e0u</span><span class="vi-val">' + (v.MODEL||'') + ' \u2022 ' + (v.COLOR||'') + '</span></div>' +
-      '<div class="vi-row"><span class="vi-label">V\u1ecb tr\u00ed</span><span class="vi-val">' + (v.LOCATION ? v.LOCATION.warehouseId+'/'+v.LOCATION.zone+'/'+v.LOCATION.row+'/'+v.LOCATION.slot : '&mdash;') + '</span></div>' +
-      '<div class="vi-row"><span class="vi-label">Ng\u00e0y v\u00e0o kho</span><span class="vi-val">' + (v.INBOUND_AT||'&mdash;') + '</span></div>' +
+      '<div class="vi-row"><span class="vi-label">Model / Màu</span><span class="vi-val">' + (v.MODEL || '') + ' • ' + (v.COLOR || '') + '</span></div>' +
+      '<div class="vi-row"><span class="vi-label">Vị trí</span><span class="vi-val">' +
+        (v.LOCATION ? (v.LOCATION.warehouseId + '/' + v.LOCATION.zone + '/' + v.LOCATION.row + '/' + v.LOCATION.slot) : '&mdash;') +
+      '</span></div>' +
+      '<div class="vi-row"><span class="vi-label">Ngày vào kho</span><span class="vi-val">' + (v.INBOUND_AT || '&mdash;') + '</span></div>' +
       '</div>'
     ).join('');
   } catch(e) { showToast(e.message, 'error'); }
 }
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script>
 
-// ╔══════════════════════════════════════════════════════╗
-// ║  QR / BARCODE SCANNER — html5-qrcode library        ║
-// ╚══════════════════════════════════════════════════════╝
-(function() {
-  let html5Scanner = null;
-  let activeTarget = null; // 'inbound' | 'outbound'
-
-  const qrModal   = document.getElementById('qrModal');
-  const qrStatus  = document.getElementById('qrStatus');
-  const qrClose   = document.getElementById('qrClose');
-  const qrReader  = document.getElementById('qrReader');
-
-  // Nút camera INBOUND
-  document.getElementById('btnQrIb').addEventListener('click', function(e) {
-    e.preventDefault();
-    activeTarget = 'inbound';
-    openScanner();
-  });
-
-  // Nút camera OUTBOUND
-  document.getElementById('btnQrOb').addEventListener('click', function(e) {
-    e.preventDefault();
-    activeTarget = 'outbound';
-    openScanner();
-  });
-
-  // Đóng scanner
-  qrClose.addEventListener('click', closeScanner);
-  qrModal.addEventListener('click', function(e) {
-    if (e.target === qrModal) closeScanner();
-  });
-
-  function openScanner() {
-    qrModal.classList.add('open');
-    qrStatus.textContent = '\u{1f50d} \u0110ang kh\u1edfi \u0111\u1ed9ng camera...';
-    document.body.style.overflow = 'hidden';
-    startHtml5Scanner();
-  }
-
-  function closeScanner() {
-    stopScanner();
-    qrModal.classList.remove('open');
-    document.body.style.overflow = '';
-  }
-
-  function stopScanner() {
-    if (html5Scanner) {
-      html5Scanner.stop().then(() => {
-        html5Scanner.clear();
-        html5Scanner = null;
-      }).catch(() => {
-        html5Scanner = null;
-      });
-    }
-  }
-
-  function startHtml5Scanner() {
-    if (typeof Html5Qrcode === 'undefined') {
-      qrStatus.textContent = '\u274c Th\u01b0 vi\u1ec7n QR ch\u01b0a s\u1eb5n s\u00e0ng. Ki\u1ec3m tra k\u1ebft n\u1ed1i m\u1ea1ng.';
-      return;
-    }
-
-    // Clear container
-    qrReader.innerHTML = '';
-    html5Scanner = new Html5Qrcode('qrReader');
-
-    const config = {
-      fps: 15,
-      qrbox: { width: 240, height: 240 },
-      aspectRatio: 1.0,
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.QR_CODE,
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39,
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.DATA_MATRIX
-      ],
-      experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-    };
-
-    html5Scanner.start(
-      { facingMode: 'environment' }, // camera sau (back camera)
-      config,
-      onScanSuccess,
-      onScanError
-    ).then(() => {
-      qrStatus.textContent = '\u{1f4f7} H\u01b0\u1edbng camera v\u00e0o m\u00e3 QR / barcode...';
-    }).catch(err => {
-      if (err && err.toString().includes('Permission')) {
-        qrStatus.textContent = '\u274c Vui l\u00f2ng c\u1ea5p quy\u1ec1n camera cho trang web n\u00e0y.';
-      } else if (err && err.toString().includes('facingMode')) {
-        // Fallback: thử camera mặc định nếu không có back camera
-        html5Scanner.start(
-          { facingMode: 'user' },
-          config, onScanSuccess, onScanError
-        ).then(() => {
-          qrStatus.textContent = '\u{1f4f7} H\u01b0\u1edbng camera v\u00e0o m\u00e3 QR / barcode...';
-        }).catch(e2 => {
-          qrStatus.textContent = '\u274c Kh\u00f4ng th\u1ec3 m\u1edf camera: ' + e2;
-        });
-      } else {
-        qrStatus.textContent = '\u274c L\u1ed7i camera: ' + err;
-      }
-    });
-  }
-
-  function onScanSuccess(decodedText) {
-    // Làm sạch kết quả — VIN thường là 17 ký tự alphanumeric
-    const raw = decodedText.trim().toUpperCase();
-    // Nếu kết quả chứa VIN (17 ký tự liên tiếp), trích xuất
-    const vinMatch = raw.match(/[A-HJ-NPR-Z0-9]{17}/);
-    const vin = vinMatch ? vinMatch[0] : raw;
-
-    // Flash hiệu ứng thành công
-    const box = document.getElementById('qrBox');
-    box.classList.add('qr-success-flash');
-    setTimeout(() => box.classList.remove('qr-success-flash'), 350);
-
-    qrStatus.textContent = '\u2705 \u0110\u00e3 qu\u00e9t: ' + vin;
-
-    // Dừng scanner sau khi quét thành công
-    stopScanner();
-    setTimeout(() => {
-      qrModal.classList.remove('open');
-      document.body.style.overflow = '';
-
-      // Điền VIN vào input tương ứng và trigger lookup
-      if (activeTarget === 'inbound') {
-        const inp = document.getElementById('ibVin');
-        inp.value = vin;
-        inp.focus();
-        lookupVehicle(vin, 'inbound');
-      } else if (activeTarget === 'outbound') {
-        const inp = document.getElementById('obVin');
-        inp.value = vin;
-        inp.focus();
-        lookupVehicle(vin, 'outbound');
-      }
-    }, 400);
-  }
-
-  function onScanError(errorMessage) {
-    // Bỏ qua lỗi "no code found" — đây là bình thường khi chưa quét được
-    // Chỉ log lỗi thực sự
-    if (errorMessage && !errorMessage.includes('No MultiFormat Readers') &&
-        !errorMessage.includes('No barcode or QR code detected') &&
-        !errorMessage.includes('NotFoundException')) {
-      console.warn('QR scan error:', errorMessage);
-    }
-  }
-})();
-
+</script>
 </body></html>
