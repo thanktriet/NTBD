@@ -1,0 +1,100 @@
+<!DOCTYPE html><html lang="vi"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>WMS — Dev Login</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f172a;--sf:#1e293b;--bd:#334155;--tx:#f8fafc;--mu:#94a3b8;--ac:#6366f1;--gr:#22c55e;--re:#ef4444;--ye:#f59e0b}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+.box{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:1.5rem;width:100%;max-width:400px}
+h2{font-size:1rem;font-weight:700;margin-bottom:.25rem}
+.sub{font-size:.78rem;color:var(--mu);margin-bottom:1.25rem}
+.warn{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:.65rem .85rem;font-size:.78rem;color:#f59e0b;margin-bottom:1.25rem}
+.btn{display:flex;align-items:center;gap:.5rem;width:100%;padding:.75rem 1rem;border:none;border-radius:8px;cursor:pointer;font-size:.88rem;font-weight:600;margin-bottom:.6rem;transition:all .15s;text-align:left}
+.btn:hover{filter:brightness(1.12)}
+.btn-wh{background:rgba(99,102,241,.2);border:1px solid var(--ac);color:#a5b4fc}
+.btn-ad{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:#86efac}
+.btn-vw{background:rgba(248,163,11,.12);border:1px solid rgba(248,163,11,.35);color:#fcd34d}
+.badge{font-size:.7rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;margin-left:auto}
+.bw{background:rgba(99,102,241,.25);color:#a5b4fc}
+.ba{background:rgba(34,197,94,.2);color:#86efac}
+.bv{background:rgba(248,163,11,.15);color:#fcd34d}
+.sep{border:none;border-top:1px solid var(--bd);margin:.75rem 0}
+.status{font-size:.78rem;color:var(--gr);text-align:center;min-height:1.2rem;margin-top:.75rem}
+.clear-btn{display:block;width:100%;padding:.5rem;background:transparent;border:1px solid var(--re);border-radius:6px;color:var(--re);cursor:pointer;font-size:.78rem;margin-top:.5rem}
+.clear-btn:hover{background:rgba(239,68,68,.1)}
+.note{font-size:.72rem;color:var(--mu);margin-top:1rem;line-height:1.5;border-top:1px solid var(--bd);padding-top:.75rem}
+code{background:var(--bg);padding:.1rem .3rem;border-radius:3px;font-size:.7rem}
+</style>
+</head>
+<body>
+<div class="box">
+  <h2>🛠️ WMS Dev Login</h2>
+  <p class="sub">Chỉ dùng để test localhost — không dùng trên production</p>
+
+  <div class="warn">⚠️ Trang này inject fake JWT vào localStorage để bypass màn hình đăng nhập thật. Token có hiệu lực 99 năm.</div>
+
+  <button class="btn btn-wh" onclick="login('warehouse')">
+    📦 Đăng nhập Thủ Kho
+    <span class="badge bw">warehouse</span>
+  </button>
+  <button class="btn btn-ad" onclick="login('admin')">
+    👨‍💼 Đăng nhập Admin
+    <span class="badge ba">admin</span>
+  </button>
+  <button class="btn btn-vw" onclick="login('viewer')">
+    👁️ Đăng nhập Tư Vấn Bán Hàng
+    <span class="badge bv">viewer</span>
+  </button>
+
+  <hr class="sep">
+  <button class="clear-btn" onclick="clearAndGoLogin()">🗑️ Xóa session — về trang login thật</button>
+
+  <div class="status" id="status"></div>
+
+  <div class="note">
+    <b>Token fake này hoạt động vì:</b><br>
+    <code>auth.js</code> chỉ decode payload base64, không verify signature.<br><br>
+    <b>Sau khi đăng nhập dev:</b><br>
+    • Giao diện hiển thị đúng role<br>
+    • QR scanner hoạt động (cần camera)<br>
+    • API calls đến GAS thật — cần cấu hình <code>api-client.js</code>
+  </div>
+</div>
+
+<script>
+// Tạo fake JWT — chỉ cần payload hợp lệ, auth.js không verify signature
+function makeToken(role) {
+  const header  = btoa(JSON.stringify({typ:'JWT',alg:'HS256'})).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const users = {
+    warehouse: {username:'thukho',  role:'warehouse', fullName:'Thủ Kho Test'},
+    admin:     {username:'admin',   role:'admin',     fullName:'Admin Test'},
+    viewer:    {username:'tvbh',    role:'viewer',    fullName:'Tư Vấn Bán Hàng Test'},
+  };
+  const payload = btoa(JSON.stringify({...users[role], exp: 9999999999}))
+    .replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  return header + '.' + payload + '.dev_mock_sig';
+}
+
+const rolePages = {warehouse:'warehouse.html', admin:'admin.html', viewer:'viewer.html'};
+
+function login(role) {
+  const token = makeToken(role);
+  const users = {
+    warehouse:{username:'thukho',  role:'warehouse', fullName:'Thủ Kho Test'},
+    admin:    {username:'admin',   role:'admin',     fullName:'Admin Test'},
+    viewer:   {username:'tvbh',    role:'viewer',    fullName:'Tư Vấn Bán Hàng Test'},
+  };
+  localStorage.setItem('wms_token', token);
+  localStorage.setItem('wms_user', JSON.stringify(users[role]));
+  document.getElementById('status').textContent = '✅ Đã inject token. Đang chuyển trang...';
+  setTimeout(() => { window.location.href = rolePages[role]; }, 600);
+}
+
+function clearAndGoLogin() {
+  localStorage.removeItem('wms_token');
+  localStorage.removeItem('wms_user');
+  window.location.href = 'index.html';
+}
+</script>
+</body></html>

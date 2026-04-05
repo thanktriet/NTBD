@@ -101,7 +101,7 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
   <div class="content">
     <div class="card">
       <div class="card-hdr-row">
-        <span class="card-title">&#128229; Nhập kho theo VIN</span>
+        <span class="card-title">&#128229; Nhập kho</span>
         <button class="qr-toggle-btn qr-active" id="btnToggleQrIb" onclick="toggleQR('inbound')">&#128247; Camera</button>
       </div>
       <div id="ibQrSection" class="qr-section">
@@ -111,19 +111,26 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
       <div class="qr-or">── hoặc nhập VIN thủ công ──</div>
       <div class="scan-area">
         <input class="scan-input" id="ibVin" placeholder="Nhập VIN (17 ký tự)..." maxlength="17" autocomplete="off" autocapitalize="characters">
-        <div class="scan-hint">Nhấn Enter để tra cứu</div>
+        <div class="scan-hint">Nhấn Enter — tìm xe có sẵn hoặc lưu xe mới</div>
       </div>
       <div id="ibVehicleInfo" style="display:none"></div>
     </div>
-    <div class="card" id="ibLocationCard" style="display:none">
-      <div class="card-title" style="margin-bottom:.75rem">&#128205; Chọn vị trí kho</div>
-      <div class="loc-grid">
-        <div class="fg"><label>Kho *</label><select id="ibWh"><option value="">-- Chọn kho --</option></select></div>
-        <div class="fg"><label>Khu *</label><select id="ibZone"><option value="">-- Chọn khu --</option></select></div>
-        <div class="fg"><label>Dãy *</label><select id="ibRow"><option value="">-- Chọn dãy --</option></select></div>
-        <div class="fg"><label>Ô *</label><select id="ibSlot"><option value="">-- Chọn ô --</option></select></div>
+    <!-- Card nhập thông tin khi VIN chưa có trong hệ thống -->
+    <div class="card" id="ibNewVehicleCard" style="display:none">
+      <div class="card-title" style="margin-bottom:.75rem">&#128280; Xe mới — nhập thông tin</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+        <div class="fg"><label>Model *</label><input id="ibModel" placeholder="VF3, VF5, VF8..."></div>
+        <div class="fg"><label>Màu *</label><input id="ibColor" placeholder="Xanh Cobalt..."></div>
+        <div class="fg"><label>Năm SX</label><input id="ibYear" placeholder="2024" type="number" min="2020" max="2030"></div>
+        <div class="fg"><label>Phiên bản</label><input id="ibVersion" placeholder="Plus, Eco..."></div>
       </div>
-      <div style="font-size:.75rem;color:var(--mu)" id="ibLocStatus"></div>
+    </div>
+    <div class="card" id="ibLocationCard" style="display:none">
+      <div class="card-title" style="margin-bottom:.75rem">&#128205; Chọn kho nhập</div>
+      <div class="fg">
+        <label>Kho *</label>
+        <select id="ibWh" style="width:100%"><option value="">-- Chọn kho --</option></select>
+      </div>
     </div>
     <div class="card" id="ibPhotoCard" style="display:none">
       <div class="card-title" style="margin-bottom:.5rem">&#128247; Ảnh kiểm tra (tối đa 10 tấm)</div>
@@ -153,6 +160,11 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
         <div class="scan-hint">Nhấn Enter để tra cứu</div>
       </div>
       <div id="obVehicleInfo" style="display:none"></div>
+      <!-- Ảnh nhập kho hiển thị khi xuất xe -->
+      <div class="card" id="obInboundPhotosCard" style="display:none">
+        <div class="card-title" style="margin-bottom:.5rem">📷 Ảnh đã chụp khi nhập kho</div>
+        <div id="obInboundPhotosGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:.4rem"></div>
+      </div>
     </div>
     <div class="card" id="obFormCard" style="display:none">
       <div class="card-title" style="margin-bottom:.65rem">&#128196; Thông tin xuất kho</div>
@@ -295,6 +307,9 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
+// ---- WAREHOUSE MAP (id → name) ---------------------------
+let _whMap = {};
+
 // ---- INLINE QR SCANNER -----------------------------------
 let _qrScanner = null;
 let _qrTarget = null; // 'inbound' | 'outbound'
@@ -392,39 +407,142 @@ function toggleQR(target) {
 window.addEventListener('load', () => setTimeout(() => startQR('inbound'), 400));
 // ---- VEHICLE LOOKUP --------------------------------------
 async function lookupVehicle(vin, mode) {
-  const infoEl = document.getElementById(mode === 'inbound' ? 'ibVehicleInfo' : 'obVehicleInfo');
-  UI.hide(infoEl);
+  const infoEl  = document.getElementById(mode === 'inbound' ? 'ibVehicleInfo' : 'obVehicleInfo');
+  const vinEl   = document.getElementById(mode === 'inbound' ? 'ibVin' : 'obVin');
+
+  // ── Hiện loading ngay lập tức ──────────────────────────
+  vinEl.disabled = true;
+  infoEl.innerHTML =
+    '<div style="display:flex;align-items:center;gap:.65rem;padding:.8rem .25rem">' +
+    '<span class="spin" style="width:18px;height:18px;border-width:2.5px"></span>' +
+    '<span style="color:var(--mu);font-size:.9rem">Đang tìm VIN <b>' + vin + '</b>…</span>' +
+    '</div>';
+  UI.show(infoEl);
+
+  if (mode === 'inbound') {
+    UI.hide(document.getElementById('ibNewVehicleCard'));
+    UI.hide(document.getElementById('ibLocationCard'));
+    UI.hide(document.getElementById('ibPhotoCard'));
+    UI.hide(document.getElementById('btnIbSubmit'));
+  } else {
+    // Reset outbound form trước khi lookup để tránh hiển thị data cũ
+    obVehicleData = null;
+    UI.hide(document.getElementById('obInboundPhotosCard'));
+    UI.hide(document.getElementById('obFormCard'));
+    UI.hide(document.getElementById('btnObSubmit'));
+  }
   try {
     const res = await API.vehicles.getByVin(vin);
-    if (!res.success || !res.data) {
-      showToast('Không tìm thấy xe: ' + vin, 'error');
-      return;
-    }
-    const v = res.data;
+
     if (mode === 'inbound') {
-      if (v.WAREHOUSE_STATUS !== 'VẬN TẢI') {
-        showToast('Xe không ở trạng thái VẬN TẢI! Hiện tại: ' + v.WAREHOUSE_STATUS, 'error');
+      // ── Xe chưa có trong hệ thống → cho nhập thủ công ─────
+      if (!res.success || !res.data) {
+        ibVehicleData = { VIN: vin, isNew: true };
+        infoEl.innerHTML =
+          '<div class="vehicle-info">' +
+          '<div class="vi-row"><span class="vi-label">Số VIN</span><span class="vi-val"><b>' + vin + '</b></span></div>' +
+          '<div class="vi-row"><span class="vi-label">Trạng thái</span>' +
+          '<span class="vi-val" style="color:var(--ye)">&#128280; Xe mới — chưa có trong hệ thống</span></div>' +
+          '</div>';
+        UI.show(infoEl, 'anim-slide-up');
+        UI.show(document.getElementById('ibNewVehicleCard'), 'anim-slide-up');
+        UI.show(document.getElementById('ibLocationCard'), 'anim-slide-up');
+        UI.show(document.getElementById('ibPhotoCard'), 'anim-slide-up');
+        document.getElementById('btnIbSubmit').innerHTML = '&#128280; Lưu xe mới vào kho';
+        UI.showFlex(document.getElementById('btnIbSubmit'), 'anim-pop-sm');
+        ibPhotos = [];
+        makeImgGrid('ibImgGrid', 'ibFileInput', 10, ibPhotos);
+        updateImgCount('ibImgCount', 'ibFileInput', 10, ibPhotos);
+        await loadWarehouseOptions();
+        updateSubmitBtn('inbound');
         return;
       }
+
+      // ── Xe đã có → kiểm tra trạng thái ────────────────────
+      const v = res.data;
+      if (v.WAREHOUSE_STATUS === 'ĐÃ VỀ') {
+        // Cho phép cập nhật vị trí kho mới
+        ibVehicleData = { ...v, isRelocate: true };
+        renderVehicleInfo(v, 'ibVehicleInfo');
+        // Banner thông báo đang trong kho
+        const infoEl2 = document.getElementById('ibVehicleInfo');
+        infoEl2.insertAdjacentHTML('beforeend',
+          '<div style="margin-top:.6rem;padding:.5rem .75rem;background:rgba(251,191,36,.15);' +
+          'border:1px solid rgba(251,191,36,.4);border-radius:6px;font-size:.82rem;color:#f59e0b">' +
+          '📍 Xe đang ở <strong>' + (_whMap[v.WAREHOUSE_ID] || v.WAREHOUSE_ID || 'kho hiện tại') + '</strong> — ' +
+          'Chọn kho mới để chuyển vị trí' +
+          '</div>'
+        );
+        UI.show(infoEl, 'anim-slide-up');
+        UI.hide(document.getElementById('ibNewVehicleCard'));
+        UI.show(document.getElementById('ibLocationCard'), 'anim-slide-up');
+        UI.show(document.getElementById('ibPhotoCard'), 'anim-slide-up');
+        document.getElementById('btnIbSubmit').innerHTML = '&#128337; Cập nhật vị trí kho';
+        UI.showFlex(document.getElementById('btnIbSubmit'), 'anim-pop-sm');
+        ibPhotos = [];
+        makeImgGrid('ibImgGrid', 'ibFileInput', 10, ibPhotos);
+        updateImgCount('ibImgCount', 'ibFileInput', 10, ibPhotos);
+        await loadWarehouseOptions();
+        // Pre-select kho hiện tại
+        if (v.WAREHOUSE_ID) {
+          const sel = document.getElementById('ibWarehouse');
+          if (sel) sel.value = v.WAREHOUSE_ID;
+        }
+        updateSubmitBtn('inbound');
+        return;
+      }
+      if (v.WAREHOUSE_STATUS === 'ĐÃ XUẤT') {
+        showToast('⚠️ Xe này đã xuất kho trước đó!', 'error'); return;
+      }
+      // Trạng thái hợp lệ (VẬN TẢI hoặc trạng thái khác → vẫn cho nhập)
       ibVehicleData = v;
       renderVehicleInfo(v, 'ibVehicleInfo');
       UI.show(infoEl, 'anim-slide-up');
+      UI.hide(document.getElementById('ibNewVehicleCard'));
       UI.show(document.getElementById('ibLocationCard'), 'anim-slide-up');
       UI.show(document.getElementById('ibPhotoCard'), 'anim-slide-up');
+      document.getElementById('btnIbSubmit').innerHTML = '&#9989; Xác nhận nhập kho';
       UI.showFlex(document.getElementById('btnIbSubmit'), 'anim-pop-sm');
       ibPhotos = [];
       makeImgGrid('ibImgGrid', 'ibFileInput', 10, ibPhotos);
       updateImgCount('ibImgCount', 'ibFileInput', 10, ibPhotos);
       await loadWarehouseOptions();
       updateSubmitBtn('inbound');
+
     } else {
+      // ── OUTBOUND ───────────────────────────────────────────
+      if (!res.success || !res.data) {
+        showToast('Không tìm thấy xe: ' + vin, 'error'); return;
+      }
+      const v = res.data;
       if (v.WAREHOUSE_STATUS !== 'ĐÃ VỀ') {
-        showToast('Xe không ở trạng thái ĐÃ VỀ! Hiện tại: ' + v.WAREHOUSE_STATUS, 'error');
-        return;
+        showToast('⚠️ Xe không ở trạng thái ĐÃ VỀ! Hiện tại: ' + v.WAREHOUSE_STATUS, 'error'); return;
       }
       obVehicleData = v;
       renderVehicleInfo(v, 'obVehicleInfo');
       UI.show(infoEl, 'anim-slide-up');
+
+      // Hiển thị ảnh nhập kho để thủ kho đối chiếu
+      const obPhotosCard = document.getElementById('obInboundPhotosCard');
+      const obPhotosGrid = document.getElementById('obInboundPhotosGrid');
+      let inboundUrls = [];
+      try {
+        const p = typeof v.PHOTOS === 'string' ? JSON.parse(v.PHOTOS || '{}') : (v.PHOTOS || {});
+        inboundUrls = p.in || [];
+      } catch(e) {}
+      if (inboundUrls.length > 0) {
+        obPhotosGrid.innerHTML = inboundUrls.map(u => {
+          const m = u.match(/[?&]id=([^&]+)/);
+          const thumb = m ? 'https://lh3.googleusercontent.com/d/' + m[1] + '=w400' : u;
+          return '<a href="' + u + '" target="_blank" style="display:block;aspect-ratio:1;border-radius:6px;overflow:hidden;border:1px solid var(--bd)">' +
+                 '<img src="' + thumb + '" alt="ảnh nhập kho" style="width:100%;height:100%;object-fit:cover" loading="lazy">' +
+                 '</a>';
+        }).join('');
+        UI.show(obPhotosCard, 'anim-slide-up');
+      } else {
+        UI.hide(obPhotosCard);
+      }
+
       UI.show(document.getElementById('obFormCard'), 'anim-slide-up');
       UI.showFlex(document.getElementById('btnObSubmit'), 'anim-pop-sm');
       obPhotos = [];
@@ -433,18 +551,22 @@ async function lookupVehicle(vin, mode) {
       updateSubmitBtn('outbound');
     }
   } catch(err) { showToast('Lỗi: ' + err.message, 'error'); }
+  finally { vinEl.disabled = false; vinEl.focus(); }
 }
 
 // ---- UPDATE SUBMIT BUTTON --------------------------------
 function updateSubmitBtn(mode) {
   if (mode === 'inbound') {
     const btn = document.getElementById('btnIbSubmit');
-    const hasVin = ibVehicleData !== null;
-    const hasLoc = document.getElementById('ibWh').value &&
-                   document.getElementById('ibZone').value &&
-                   document.getElementById('ibRow').value &&
-                   document.getElementById('ibSlot').value;
-    btn.disabled = !(hasVin && hasLoc);
+    if (!ibVehicleData) { btn.disabled = true; return; }
+    const hasWh   = !!document.getElementById('ibWh').value;
+    if (ibVehicleData.isNew) {
+      const model = (document.getElementById('ibModel') || {}).value || '';
+      const color = (document.getElementById('ibColor') || {}).value || '';
+      btn.disabled = !(hasWh && model.trim() && color.trim());
+    } else {
+      btn.disabled = !hasWh;
+    }
   } else {
     const btn = document.getElementById('btnObSubmit');
     const hasVin = obVehicleData !== null;
@@ -470,67 +592,25 @@ async function loadWarehouseOptions() {
     const res = await API.warehouses.list();
     if (!res.success) return;
     ibWarehouses = res.data || [];
+    // Build _whMap: id → name (dùng cho inventory list và banner)
+    _whMap = {};
+    ibWarehouses.forEach(w => { _whMap[w.ID] = w.NAME; });
     const sel = document.getElementById('ibWh');
     sel.innerHTML = '<option value="">-- Chọn kho --</option>' +
       ibWarehouses.map(w => '<option value="' + w.ID + '">' + w.NAME + '</option>').join('');
   } catch(e) {}
 }
 
-// Location dropdowns
-document.getElementById('ibWh').onchange = async function() {
-  const whId = this.value;
-  ['ibZone','ibRow','ibSlot'].forEach(id => {
-    document.getElementById(id).innerHTML = '<option value="">--</option>';
-  });
-  if (!whId) { updateSubmitBtn('inbound'); return; }
-  try {
-    const res = await API.locations.getZones(whId);
-    if (res.success) {
-      document.getElementById('ibZone').innerHTML =
-        '<option value="">-- Chọn khu --</option>' +
-        (res.data || []).map(z => '<option value="' + z + '">' + z + '</option>').join('');
-    }
-  } catch(e) {}
+// Kho thay đổi → cập nhật trạng thái nút submit
+document.getElementById('ibWh').onchange = function() {
   updateSubmitBtn('inbound');
 };
 
-document.getElementById('ibZone').onchange = async function() {
-  const whId = document.getElementById('ibWh').value;
-  const zone = this.value;
-  document.getElementById('ibRow').innerHTML = '<option value="">-- Chọn dãy --</option>';
-  document.getElementById('ibSlot').innerHTML = '<option value="">-- Chọn ô --</option>';
-  if (!whId || !zone) { updateSubmitBtn('inbound'); return; }
-  try {
-    const res = await API.locations.getRows(whId, zone);
-    if (res.success) {
-      document.getElementById('ibRow').innerHTML =
-        '<option value="">-- Chọn dãy --</option>' +
-        (res.data || []).map(r => '<option value="' + r + '">' + r + '</option>').join('');
-    }
-  } catch(e) {}
-  updateSubmitBtn('inbound');
-};
-
-document.getElementById('ibRow').onchange = async function() {
-  const whId = document.getElementById('ibWh').value;
-  const zone = document.getElementById('ibZone').value;
-  const row = this.value;
-  document.getElementById('ibSlot').innerHTML = '<option value="">-- Chọn ô --</option>';
-  if (!whId || !zone || !row) { updateSubmitBtn('inbound'); return; }
-  try {
-    const res = await API.locations.getAvailableSlots(whId, zone, row);
-    if (res.success) {
-      document.getElementById('ibSlot').innerHTML =
-        '<option value="">-- Chọn ô --</option>' +
-        (res.data || []).map(s =>
-          '<option value="' + s.id + '"' + (s.occupied ? ' disabled' : '') + '>' +
-          s.id + (s.occupied ? ' (đã có xe)' : '') + '</option>'
-        ).join('');
-    }
-  } catch(e) {}
-  updateSubmitBtn('inbound');
-};
-document.getElementById('ibSlot').onchange = () => updateSubmitBtn('inbound');
+// Xe mới: trigger updateSubmitBtn khi nhập model/màu
+['ibModel','ibColor'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.oninput = () => updateSubmitBtn('inbound');
+});
 
 // File input for inbound photos
 document.getElementById('ibFileInput').onchange = function(e) {
@@ -549,13 +629,17 @@ document.getElementById('ibFileInput').onchange = function(e) {
 };
 // ---- INBOUND SUBMIT -------------------------------------
 document.getElementById('btnIbSubmit').onclick = async function() {
-  const wh   = document.getElementById('ibWh').value;
-  const zone = document.getElementById('ibZone').value;
-  const row  = document.getElementById('ibRow').value;
-  const slot = document.getElementById('ibSlot').value;
-  if (!ibVehicleData || !wh || !zone || !row || !slot) {
-    showToast('Vui lòng điền đủ thông tin', 'error');
-    return;
+  const wh = document.getElementById('ibWh').value;
+  if (!ibVehicleData || !wh) {
+    showToast('Vui lòng điền đủ thông tin', 'error'); return;
+  }
+  // Validate thêm nếu là xe mới
+  if (ibVehicleData.isNew) {
+    const model = document.getElementById('ibModel').value.trim();
+    const color = document.getElementById('ibColor').value.trim();
+    if (!model || !color) {
+      showToast('Vui lòng nhập Model và Màu xe', 'error'); return;
+    }
   }
   this.disabled = true;
   this.innerHTML = '<span class="spin"></span> Đang xử lý...';
@@ -564,32 +648,52 @@ document.getElementById('btnIbSubmit').onclick = async function() {
     const photoUrls = ibPhotos.length > 0
       ? await DriveUpload.uploadPhotos(ibPhotos.map(p => p.file), ibVehicleData.VIN, 'INBOUND')
       : [];
-    const res = await API.warehouse.inbound({
-      vin: ibVehicleData.VIN,
+    // Tạo payload — nếu xe mới thì gửi kèm thông tin xe
+    const payload = {
+      vin:         ibVehicleData.VIN,
       warehouseId: wh,
-      zone,
-      row,
-      slot,
-      photos: photoUrls,
+      photos:      photoUrls,
       performedBy: _user.username
-    });
+    };
+    if (ibVehicleData.isNew) {
+      payload.isNew   = true;
+      payload.model   = document.getElementById('ibModel').value.trim();
+      payload.color   = document.getElementById('ibColor').value.trim();
+      payload.year    = document.getElementById('ibYear').value.trim();
+      payload.version = document.getElementById('ibVersion').value.trim();
+    }
+    const res = await API.warehouse.inbound(payload);
     if (res.success) {
-      showToast('✅ Nhập kho thành công! ' + ibVehicleData.VIN + ' → ' + wh + '/' + zone + '/' + row + '/' + slot);
-      ibVehicleData = null;
-      ibPhotos = [];
+      let label;
+      if (ibVehicleData.isNew)      label = '🆕 Đã lưu xe mới vào kho';
+      else if (ibVehicleData.isRelocate) {
+        const toName = (res.data && res.data.warehouseName) || '';
+        label = '📍 Đã chuyển vị trí kho' + (toName ? ' → ' + toName : '');
+      }
+      else label = '✅ Nhập kho thành công';
+      const wasNew = ibVehicleData.isNew;
+      showToast(label + '! VIN: ' + ibVehicleData.VIN);
+      // Reset toàn bộ inbound form
+      ibVehicleData = null; ibPhotos = [];
       document.getElementById('ibVin').value = '';
       document.getElementById('ibQrSection').classList.remove('qr-success');
+      ['ibModel','ibColor','ibYear','ibVersion'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+      });
       UI.hide(document.getElementById('ibVehicleInfo'));
+      UI.hide(document.getElementById('ibNewVehicleCard'));
       UI.hide(document.getElementById('ibLocationCard'));
       UI.hide(document.getElementById('ibPhotoCard'));
       UI.hide(document.getElementById('btnIbSubmit'));
       setTimeout(() => startQR('inbound'), 300);
+      return; // thoát sớm — không chạy phần reset button bên dưới
     } else {
       showToast(res.message || 'Lỗi không xác định', 'error');
     }
   } catch(e) { showToast('Lỗi: ' + e.message, 'error'); }
+  // Chỉ chạy khi lỗi (success đã return sớm ở trên)
   this.disabled = false;
-  this.innerHTML = '✅ Xác nhận nhập kho';
+  this.innerHTML = ibVehicleData && ibVehicleData.isNew ? '&#128280; Lưu xe mới vào kho' : '&#9989; Xác nhận nhập kho';
 };
 
 // ---- OUTBOUND STATE -------------------------------------
@@ -652,13 +756,16 @@ document.getElementById('btnObSubmit').onclick = async function() {
       document.getElementById('obDeliverer').value = '';
       document.getElementById('obNote').value = '';
       UI.hide(document.getElementById('obVehicleInfo'));
+      UI.hide(document.getElementById('obInboundPhotosCard'));
       UI.hide(document.getElementById('obFormCard'));
       UI.hide(document.getElementById('btnObSubmit'));
       setTimeout(() => startQR('outbound'), 300);
+      return; // thoát sớm — không chạy phần reset button bên dưới
     } else {
       showToast(res.message || 'Lỗi không xác định', 'error');
     }
   } catch(e) { showToast('Lỗi: ' + e.message, 'error'); }
+  // Chỉ chạy khi lỗi (success đã return sớm ở trên)
   this.disabled = false;
   this.innerHTML = '&#128666; Xác nhận xuất kho';
 };
@@ -691,13 +798,16 @@ async function loadInventory() {
       '<div class="vi-row"><span class="vi-label">VIN</span><span class="vi-val"><b>' + v.VIN + '</b></span></div>' +
       '<div class="vi-row"><span class="vi-label">Model / Màu</span><span class="vi-val">' + (v.MODEL || '') + ' • ' + (v.COLOR || '') + '</span></div>' +
       '<div class="vi-row"><span class="vi-label">Vị trí</span><span class="vi-val">' +
-        (v.LOCATION ? (v.LOCATION.warehouseId + '/' + v.LOCATION.zone + '/' + v.LOCATION.row + '/' + v.LOCATION.slot) : '&mdash;') +
+        (v.WAREHOUSE_ID ? (_whMap[v.WAREHOUSE_ID] || v.WAREHOUSE_ID) : '&mdash;') +
       '</span></div>' +
       '<div class="vi-row"><span class="vi-label">Ngày vào kho</span><span class="vi-val">' + (v.INBOUND_AT || '&mdash;') + '</span></div>' +
       '</div>'
     ).join('');
   } catch(e) { showToast(e.message, 'error'); }
 }
+
+// ---- INIT ----
+loadWarehouseOptions();
 
 </script>
 </body></html>

@@ -4,7 +4,7 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#0f172a;--sf:#1e293b;--sf2:#263248;--bd:#334155;--tx:#f8fafc;--mu:#94a3b8;--ac:#6366f1;--gr:#22c55e;--ye:#f59e0b;--re:#ef4444}
 body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-size:14px}
-.app{max-width:600px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.app{max-width:1200px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
 .topbar{padding:.75rem 1rem;background:var(--sf);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .topbar-title{font-weight:700;font-size:1rem}
 .topbar-user{font-size:.78rem;color:var(--mu);display:flex;align-items:center;gap:.5rem}
@@ -18,16 +18,23 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
 .btn-pr{background:var(--ac);color:#fff}.btn-pr:hover{background:#4f46e5}
 .btn-sec{background:var(--sf2);color:var(--tx);border:1px solid var(--bd)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
-.filter-bar{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.65rem;align-items:flex-end}
-.fg{margin-bottom:0}
-.fg label{display:block;font-size:.75rem;color:var(--mu);margin-bottom:.22rem}
-.fg input,.fg select{padding:.4rem .6rem;background:var(--bg);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:.82rem;outline:none}
-.fg input:focus,.fg select:focus{border-color:var(--ac)}
-.fg select option{background:var(--sf)}
-.veh-card{background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:.75rem;margin-bottom:.5rem}
-.veh-vin{font-weight:700;font-size:.9rem}
-.veh-meta{font-size:.78rem;color:var(--mu);margin:.2rem 0}
-.veh-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-top:.35rem}
+/* Bảng viền đầy đủ */
+.veh-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.veh-table th,.veh-table td{border:1px solid var(--bd);padding:.45rem .6rem;text-align:left;white-space:nowrap}
+.veh-table thead tr:first-child th{background:var(--sf);font-weight:600;font-size:.78rem;color:var(--mu);position:sticky;top:0;z-index:10}
+/* Hàng filter */
+.veh-table thead tr:last-child th{background:var(--sf2);padding:.3rem .4rem}
+.veh-table thead tr:last-child input,
+.veh-table thead tr:last-child select{width:100%;padding:.28rem .4rem;background:var(--bg);border:1px solid var(--bd);border-radius:4px;color:var(--tx);font-size:.75rem;outline:none}
+.veh-table thead tr:last-child input:focus,
+.veh-table thead tr:last-child select:focus{border-color:var(--ac)}
+.veh-table thead tr:last-child select option{background:var(--sf)}
+/* Body rows */
+.veh-table tbody tr:nth-child(even){background:rgba(255,255,255,.025)}
+.veh-table tbody tr:hover{background:rgba(99,102,241,.08)}
+.veh-table .e-row td{text-align:center;color:var(--mu);padding:1.5rem}
+/* Scroll wrapper */
+.tbl-scroll{overflow-x:auto;border:1px solid var(--bd);border-radius:8px}
 .bs{display:inline-block;padding:.18rem .5rem;border-radius:4px;font-size:.7rem;font-weight:600}
 .bs-vt{background:rgba(245,158,11,.15);color:#f59e0b}
 .bs-dv{background:rgba(34,197,94,.15);color:#22c55e}
@@ -65,8 +72,9 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
 .req-vin{font-weight:600;font-size:.87rem;margin-bottom:.2rem}
 .req-meta{font-size:.76rem;color:var(--mu)}
 .note-box{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:5px;padding:.45rem .6rem;font-size:.76rem;color:#fca5a5;margin-top:.35rem}
+</style>
 <link rel='stylesheet' href='css/wms-animate.css'>
-</style></head><body><div class='app'>
+</head><body><div class='app'>
 <div class='topbar'>
   <span class='topbar-title'>👁 TVBH — WMS</span>
   <span class='topbar-user'><span id='topUser'></span>
@@ -77,13 +85,51 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
   <div class='tab-btn' data-tab='requests'>📄 Yêu cầu của tôi</div>
 </div>
 <div class='tab-pane active' id='tab-search'><div class='content'>
-  <div class='card'><div class='filter-bar'>
-    <div class='fg'><label>Tìm kiếm</label><input id='srSearch' placeholder='VIN, model...' style='width:170px'></div>
-    <div class='fg'><label>TT Kho</label><select id='srStatus'>
-    <option value=''>Tất cả</option><option>VẬN TẢI</option><option>ĐÃ VỀ</option><option>ĐÃ XUẤT</option></select></div>
-    <div class='fg' style='margin-top:auto'><button class='btn btn-sec' style='padding:.38rem .65rem' id='btnSrReset'>↻</button></div>
-  </div></div>
-  <div id='srResults'><div class='empty-state'><div class='empty-icon'>🚗</div><div>Nhập từ khóa để tìm xe</div></div></div>
+  <div class='tbl-scroll'>
+    <table class='veh-table'>
+      <thead>
+        <tr>
+          <th>STT</th>
+          <th>Số VIN</th>
+          <th>Model</th>
+          <th>Màu</th>
+          <th>Phiên bản</th>
+          <th>Năm</th>
+          <th>TT Kho</th>
+          <th>TT Bán</th>
+          <th>Vị trí kho</th>
+          <th></th>
+        </tr>
+        <tr>
+          <th></th>
+          <th><input id='fVin' placeholder='VIN...' oninput='onFilterChange()'></th>
+          <th><input id='fModel' placeholder='Model...' oninput='onFilterChange()'></th>
+          <th><input id='fColor' placeholder='Màu...' oninput='onFilterChange()'></th>
+          <th><input id='fVersion' placeholder='Phiên bản...' oninput='onFilterChange()'></th>
+          <th><input id='fYear' placeholder='Năm...' oninput='onFilterChange()'></th>
+          <th><select id='fWStatus' onchange='onSelectChange()'>
+            <option value=''>Tất cả</option>
+            <option>VẬN TẢI</option>
+            <option>ĐÃ VỀ</option>
+            <option>ĐÃ XUẤT</option>
+          </select></th>
+          <th><select id='fSStatus' onchange='onSelectChange()'>
+            <option value=''>Tất cả</option>
+            <option>SẴN SÀNG</option>
+            <option>ĐÃ GHÉP</option>
+            <option>ĐÃ XHĐ</option>
+          </select></th>
+          <th><select id='fWarehouse' onchange='onSelectChange()'>
+            <option value=''>Tất cả</option>
+          </select></th>
+          <th><button class='btn btn-sec' style='padding:.22rem .5rem;font-size:.78rem' onclick='resetFilters()' title='Đặt lại bộ lọc'>↻</button></th>
+        </tr>
+      </thead>
+      <tbody id='srResults'>
+        <tr class='e-row'><td colspan='10'>⏳ Đang tải...</td></tr>
+      </tbody>
+    </table>
+  </div>
   <div class='pgn' id='srPgn'></div>
 </div></div>
 <div class='tab-pane' id='tab-requests'><div class='content'>
@@ -99,7 +145,7 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
     <option value='GHEP_XE'>🚗 Ghép xe</option>
     <option value='XUAT_HOA_DON'>📄 Xuất hóa đơn</option></select></div>
   <div class='fg2'><label>Tên khách hàng *</label><input id='reqCustomer' placeholder='Nguyễn Văn A'></div>
-  <div class='fg2'><label>Số điện thoại</label><input id='reqPhone' placeholder='09xxxxxxxx' type='tel'></div>
+  <div class='fg2'><label>Mã đơn hàng / Số HĐ</label><input id='reqOrderNo' placeholder='VD: DH2025-001'></div>
   <div class='fg2'><label>Ghi chú</label><textarea id='reqNote' rows='2' placeholder='Ghi chú...'></textarea></div>
   <div class='modal-footer'>
     <button class='btn btn-sec' id='btnReqCancel'>Hủy</button>
@@ -112,17 +158,25 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-
 <script>
 const _user = AUTH.requireRole('viewer');
 if(_user) document.getElementById('topUser').textContent = _user.fullName || _user.username;
-document.getElementById('btnLogout').onclick = () => AUTH.logout();
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const tab = btn.dataset.tab;
-    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
-    if(tab === 'requests') loadMyRequests();
-  });
-});
+let _whMap = {};
+
+// ── Warehouse map ──────────────────────────────────────────────
+async function loadWarehouseMap() {
+  try {
+    const res = await API.warehouses.list();
+    if(res.success) {
+      const sel = document.getElementById('fWarehouse');
+      (res.data||[]).forEach(w => {
+        _whMap[w.ID] = w.NAME;
+        const opt = document.createElement('option');
+        opt.value = w.ID; opt.textContent = w.NAME;
+        sel.appendChild(opt);
+      });
+    }
+  } catch(e) {}
+}
+
+// ── Utilities ──────────────────────────────────────────────────
 function showToast(msg, type) {
   type = type || 'success';
   const wrap = document.getElementById('toastWrap');
@@ -132,10 +186,12 @@ function showToast(msg, type) {
   wrap.appendChild(d);
   setTimeout(() => d.remove(), 3500);
 }
+
 function statusBadge(s) {
   const map = {'VẬN TẢI':'bs-vt','ĐÃ VỀ':'bs-dv','ĐÃ XUẤT':'bs-dx','SẴN SÀNG':'bs-ss','ĐÃ GHÉP':'bs-dg','ĐỢI DUYỆT':'bs-pnd','ĐÃ DUYỆT':'bs-apr','TỪ CHỐI':'bs-rej'};
   return '<span class="bs ' + (map[s]||'bs-pnd') + '">' + (s||'') + '</span>';
 }
+
 function makePgn(cid, total, pageSize, cur, fn) {
   const pages = Math.ceil(total / pageSize);
   const el = document.getElementById(cid);
@@ -147,65 +203,96 @@ function makePgn(cid, total, pageSize, cur, fn) {
   el.innerHTML = h;
   el.querySelectorAll('.pb:not(:disabled)').forEach(b => b.onclick = () => window[fn](+b.dataset.p));
 }
+
+// ── Vehicle search / filter ────────────────────────────────────
 let srPage = 1, srDebounce;
-document.getElementById('srSearch').oninput = () => { clearTimeout(srDebounce); srDebounce = setTimeout(() => searchVehicles(), 400); };
-document.getElementById('srStatus').onchange = () => searchVehicles();
-document.getElementById('btnSrReset').onclick = () => { document.getElementById('srSearch').value=''; document.getElementById('srStatus').value=''; searchVehicles(); };
-async function searchVehicles(page) {
+
+function getFilters() {
+  return {
+    search:          document.getElementById('fVin').value.trim(),
+    model:           document.getElementById('fModel').value.trim(),
+    color:           document.getElementById('fColor').value.trim(),
+    version:         document.getElementById('fVersion').value.trim(),
+    year:            document.getElementById('fYear').value.trim(),
+    warehouseStatus: document.getElementById('fWStatus').value,
+    salesStatus:     document.getElementById('fSStatus').value,
+    warehouseId:     document.getElementById('fWarehouse').value,
+  };
+}
+
+function onFilterChange() {
+  clearTimeout(srDebounce);
+  srDebounce = setTimeout(() => loadVehicles(1), 400);
+}
+
+function onSelectChange() { loadVehicles(1); }
+
+async function loadVehicles(page) {
   srPage = page || 1;
-  const search = document.getElementById('srSearch').value.trim();
-  const warehouseStatus = document.getElementById('srStatus').value;
-  if(!search && !warehouseStatus) {
-    document.getElementById('srResults').innerHTML = '<div class="empty-state"><div class="empty-icon">&#128663;
-    UI.stagger(document.getElementById('srResults').querySelectorAll('.veh-card'),'anim-slide-up',35);</div><div>Nhập từ khóa để tìm xe</div></div>';
-    document.getElementById('srPgn').innerHTML = '';
-    return;
-  }
-  document.getElementById('srResults').innerHTML = '<div class="empty-state"><div class="empty-icon">&#9203;</div><div>Đang tìm...</div></div>';
+  const tbody = document.getElementById('srResults');
+  tbody.innerHTML = '<tr class="e-row"><td colspan="10">⏳ Đang tải...</td></tr>';
   try {
-    const res = await API.vehicles.list({search, warehouseStatus, page: srPage, pageSize: 15});
+    const res = await API.vehicles.list({ ...getFilters(), page: srPage, pageSize: 25 });
     if(!res.success) { showToast(res.message, 'error'); return; }
-    const {items, pagination} = res.data;
-    if(!items.length) {
-      document.getElementById('srResults').innerHTML = '<div class="empty-state"><div class="empty-icon">&#128269;</div><div>Không tìm thấy xe</div></div>';
-    } else {
-      document.getElementById('srResults').innerHTML = items.map(v =>
-        '<div class="veh-card">' +
-        '<div class="veh-vin">' + v.VIN + '</div>' +
-        '<div class="veh-meta">' + (v.MODEL||'') + ' • ' + (v.COLOR||'') + ' • ' + (v.VERSION||'') + ' • ' + (v.YEAR||'') + '</div>' +
-        '<div class="veh-footer"><div>' + statusBadge(v.WAREHOUSE_STATUS) + ' ' + statusBadge(v.SALES_STATUS) + '</div>' +
-        (v.WAREHOUSE_STATUS === 'ĐÃ VỀ' && v.SALES_STATUS === 'SẴN SÀNG' ?
-          '<button class="btn btn-pr" style="padding:.32rem .7rem;font-size:.76rem" data-vin="' + v.VIN + '" data-model="' + (v.MODEL||'') + '">&#128196; Tạo yêu cầu</button>' : '') +
-        '</div></div>'
-      ).join('');
-      document.getElementById('srResults').querySelectorAll('[data-vin]').forEach(btn => {
-        btn.onclick = () => openReqModal(btn.dataset.vin, btn.dataset.model);
-      });
-    }
-    makePgn('srPgn', pagination.total, 15, srPage, 'searchVehicles');
+    const { items, pagination } = res.data;
+    const start = (pagination.page - 1) * pagination.pageSize;
+    tbody.innerHTML = items.length
+      ? items.map((v, i) =>
+          '<tr>' +
+          '<td style="color:var(--mu);font-size:.75rem">' + (start+i+1) + '</td>' +
+          '<td><b>' + v.VIN + '</b></td>' +
+          '<td>' + (v.MODEL||'') + '</td>' +
+          '<td>' + (v.COLOR||'') + '</td>' +
+          '<td>' + (v.VERSION||'') + '</td>' +
+          '<td>' + (v.YEAR||'') + '</td>' +
+          '<td>' + statusBadge(v.WAREHOUSE_STATUS) + '</td>' +
+          '<td>' + statusBadge(v.SALES_STATUS) + '</td>' +
+          '<td>' + (_whMap[v.WAREHOUSE_ID] || v.WAREHOUSE_ID || '&mdash;') + '</td>' +
+          '<td>' + (v.WAREHOUSE_STATUS === 'ĐÃ VỀ' && v.SALES_STATUS === 'SẴN SÀNG'
+            ? '<button class="btn btn-pr" style="padding:.22rem .55rem;font-size:.73rem" data-vin="' + v.VIN + '" data-model="' + (v.MODEL||'') + '">📄 Tạo YC</button>'
+            : '') +
+          '</td>' +
+          '</tr>'
+        ).join('')
+      : '<tr class="e-row"><td colspan="10">∅ Không có xe nào</td></tr>';
+    tbody.querySelectorAll('[data-vin]').forEach(btn => {
+      btn.onclick = () => openReqModal(btn.dataset.vin, btn.dataset.model);
+    });
+    makePgn('srPgn', pagination.total, 25, srPage, 'loadVehicles');
   } catch(e) { showToast(e.message, 'error'); }
 }
+window.loadVehicles = loadVehicles;
+
+function resetFilters() {
+  ['fVin','fModel','fColor','fVersion','fYear'].forEach(id => document.getElementById(id).value = '');
+  ['fWStatus','fSStatus','fWarehouse'].forEach(id => document.getElementById(id).value = '');
+  loadVehicles(1);
+}
+
+// ── Request modal ──────────────────────────────────────────────
 function openReqModal(vin, model) {
   document.getElementById('reqVin').value = vin;
   document.getElementById('reqVinDisplay').value = vin + (model ? ' — ' + model : '');
   document.getElementById('reqCustomer').value = '';
-  document.getElementById('reqPhone').value = '';
+  document.getElementById('reqOrderNo').value = '';
   document.getElementById('reqNote').value = '';
   document.getElementById('reqModal').classList.add('open');
 }
+
 document.getElementById('btnReqCancel').onclick = () => document.getElementById('reqModal').classList.remove('open');
 document.querySelectorAll('.modal-ov').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
+
 document.getElementById('btnReqSubmit').onclick = async function() {
   const vin = document.getElementById('reqVin').value;
   const type = document.getElementById('reqType').value;
   const customer = document.getElementById('reqCustomer').value.trim();
-  const phone = document.getElementById('reqPhone').value.trim();
+  const orderNo = document.getElementById('reqOrderNo').value.trim();
   const note = document.getElementById('reqNote').value.trim();
   if(!vin || !type || !customer) { showToast('❌ Vui lòng nhập tên khách hàng', 'error'); return; }
   this.disabled = true;
   this.innerHTML = '<span class="spin"></span> Đang gửi...';
   try {
-    const res = await API.requests.create({vin, type, customerName: customer, customerPhone: phone, note, requestedBy: _user.username});
+    const res = await API.requests.create({vin, type, customerName: customer, orderNo, note, requestedBy: _user.username});
     if(res.success) {
       showToast('✅ Gửi yêu cầu thành công!');
       document.getElementById('reqModal').classList.remove('open');
@@ -214,6 +301,8 @@ document.getElementById('btnReqSubmit').onclick = async function() {
   this.disabled = false;
   this.textContent = '✅ Gửi yêu cầu';
 };
+
+// ── My requests tab ────────────────────────────────────────────
 let rqPage = 1;
 async function loadMyRequests(page) {
   rqPage = page || 1;
@@ -237,4 +326,21 @@ async function loadMyRequests(page) {
     makePgn('reqPgn', pagination.total, 20, rqPage, 'loadMyRequests');
   } catch(e) { showToast(e.message, 'error'); }
 }
+window.loadMyRequests = loadMyRequests;
+
+// ── Tabs ───────────────────────────────────────────────────────
+document.getElementById('btnLogout').onclick = () => AUTH.logout();
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    if(tab === 'requests') loadMyRequests();
+  });
+});
+
+// ── Init ───────────────────────────────────────────────────────
+loadWarehouseMap().then(() => loadVehicles(1));
 </script></body></html>

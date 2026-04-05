@@ -69,6 +69,14 @@ tr:hover td{background:rgba(255,255,255,.018)}
 .modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;align-items:center;justify-content:center;padding:1rem}
 .modal-ov.open{display:flex}
 .modal{background:var(--sf);border:1px solid var(--bd);border-radius:12px;width:100%;max-width:420px;padding:1.4rem}
+.modal-wide{max-width:700px}
+.photo-section-title{font-size:.8rem;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin:1rem 0 .5rem;display:flex;align-items:center;gap:.4rem}
+.photo-section-title:first-child{margin-top:0}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.5rem}
+.photo-grid a{display:block;aspect-ratio:4/3;border-radius:6px;overflow:hidden;border:1px solid var(--bd);background:var(--bg)}
+.photo-grid img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s}
+.photo-grid a:hover img{transform:scale(1.05)}
+.photo-empty{color:var(--mu);font-size:.8rem;padding:.5rem 0;font-style:italic}
 .modal-title{font-weight:600;margin-bottom:.875rem;font-size:.95rem}
 .modal-footer{display:flex;gap:.5rem;justify-content:flex-end;margin-top:.875rem}
 .fg2{margin-bottom:.7rem}
@@ -88,8 +96,14 @@ tr:hover td{background:rgba(255,255,255,.018)}
 .pgn-info{font-size:.76rem;color:var(--mu);margin-left:auto}
 .spin{width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .65s linear infinite;display:inline-block}
 @keyframes sp{to{transform:rotate(360deg)}}
+.veh-card{background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:.75rem;margin-bottom:.5rem}
+.veh-vin{font-weight:700;font-size:.9rem}
+.veh-meta{font-size:.78rem;color:var(--mu);margin:.2rem 0}
+.veh-wh{font-size:.78rem;color:var(--mu);margin:.15rem 0}
+.veh-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-top:.35rem}
+</style>
 <link rel='stylesheet' href='css/wms-animate.css'>
-</style></head><body>
+</head><body>
 <div class='sidebar'>
   <div class='s-logo'>🏭 WMS<small>Admin Panel</small></div>
   <nav class='s-nav'>
@@ -129,8 +143,9 @@ tr:hover td{background:rgba(255,255,255,.018)}
     <div class='fg' style='margin-top:auto'><button class='btn btn-sec btn-sm' id='btnVReset'>↻ Reset</button></div>
   </div>
   <div class='tbl-wrap'><table>
-    <thead><tr><th>STT</th><th>Số VIN</th><th>Model</th><th>Màu</th><th>Phiên bản</th><th>Năm</th><th>TT Kho</th><th>TT Bán</th><th>Vị trí</th></tr></thead>
-    <tbody id='vehiclesTbody'><tr class='e-row'><td colspan='9'>⏳ Đang tải...</td></tr></tbody></table></div>
+    <thead><tr><th>STT</th><th>Số VIN</th><th>Model</th><th>Màu</th><th>Phiên bản</th><th>Năm</th><th>PO</th><th>TT Kho</th><th>TT Bán</th><th>Vị trí kho</th><th>Ảnh</th></tr></thead>
+    <tbody id='vehiclesTbody'><tr class='e-row'><td colspan='11'>⏳ Đang tải...</td></tr></tbody>
+  </table></div>
   <div class='pgn' id='vehiclesPgn'></div></div></div>
 <div class='tab-pane' id='tab-requests'>
   <div class='card'><div class='card-hdr'><span class='card-title'>✅ Duyệt yêu cầu</span>
@@ -172,9 +187,14 @@ tr:hover td{background:rgba(255,255,255,.018)}
   <div class='card'><div class='card-hdr'>
     <span class='card-title'>📋 Log hệ thống</span>
     <div class='filter-bar' style='margin:0'>
-      <div class='fg'><label>Action</label><select id='logAction'>
-        <option value=''>Tất cả</option><option>IMPORT</option><option>INBOUND</option>
-        <option>OUTBOUND</option><option>REQUEST_CREATE</option><option>REQUEST_APPROVE</option></select></div>
+      <div class='fg'><label>Action</label><select id='logFilter'>
+        <option value=''>Tất cả</option>
+        <option>IMPORT</option>
+        <option>INBOUND</option>
+        <option>RELOCATE</option>
+        <option>OUTBOUND</option>
+        <option>REQUEST_CREATE</option>
+        <option>REQUEST_APPROVE</option></select></div>
       <div class='fg' style='margin-top:auto'><button class='btn btn-sec btn-sm' id='btnLReload'>↻</button></div>
     </div></div>
   <div class='tbl-wrap'><table>
@@ -190,6 +210,20 @@ tr:hover td{background:rgba(255,255,255,.018)}
     <button class='btn btn-sec' id='btnRejectCancel'>Hủy</button>
     <button class='btn btn-ng' id='btnRejectSubmit'>Xác nhận từ chối</button>
   </div></div></div>
+<div class='modal-ov' id='photoModal'>
+  <div class='modal modal-wide'>
+    <div class='modal-title'>📸 Ảnh xe — <span id='photoModalVin'></span></div>
+    <div id='photoModalBody' style='max-height:60vh;overflow-y:auto'>
+      <div class='photo-section-title'>📥 Ảnh nhập kho</div>
+      <div class='photo-grid' id='pgInbound'></div>
+      <div class='photo-section-title'>📤 Ảnh xuất kho</div>
+      <div class='photo-grid' id='pgOutbound'></div>
+    </div>
+    <div class='modal-footer'>
+      <button class='btn btn-sec' id='btnPhotoClose'>Đóng</button>
+    </div>
+  </div>
+</div>
 <div class='toast-wrap' id='toastWrap'></div>
 <script src='js/wms-ui.js'></script>
 <script src='js/api-client.js'></script>
@@ -204,6 +238,7 @@ const TAB_LABELS = {
 };
 let importValidRows = [], rejectRequestId = null;
 let vPage = 1, rPage = 1, lPage = 1;
+let _whMap = {}; // warehouseId → warehouseName
 
 // ---- NAVIGATION ----
 document.querySelectorAll('.nav-item').forEach(item => {
@@ -274,17 +309,73 @@ function processExcel(file) {
     try {
       const wb = XLSX.read(e.target.result, {type:'binary'});
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const raw = XLSX.utils.sheet_to_json(ws, {defval:''});
-      if(!raw.length) { showToast('File Excel tr\u1ed1ng!', 'error'); return; }
-      const rows = raw.map(r => ({
-        VIN: String(r['VIN'] || r['vin'] || '').trim().toUpperCase(),
-        MODEL: String(r['MODEL'] || r['Model'] || r['model'] || '').trim(),
-        COLOR: String(r['COLOR'] || r['Color'] || r['M\u00c0U'] || '').trim(),
-        VERSION: String(r['VERSION'] || r['Version'] || r['PHI\u00caN B\u1ea2N'] || '').trim(),
-        YEAR: String(r['YEAR'] || r['Year'] || r['N\u0102M'] || '').trim(),
-        PO_NUMBER: String(r['PO_NUMBER'] || r['PO'] || '').trim(),
-        NOTE: String(r['NOTE'] || r['GHI CH\u00da'] || '').trim()
+
+      // Đọc toàn bộ sheet dưới dạng mảng thô (không dùng header row mặc định)
+      // để tự tìm đúng dòng header — bỏ qua title/notes/mô tả ở đầu file mẫu.
+      const allRows = XLSX.utils.sheet_to_json(ws, {header: 1, defval: ''});
+
+      // Tìm dòng header: dòng đầu tiên có ô chứa "VIN" (không phân biệt hoa/thường, bỏ dấu *)
+      let headerRowIdx = -1;
+      for (let i = 0; i < allRows.length; i++) {
+        const hasVin = allRows[i].some(cell =>
+          String(cell).trim().replace(/\s*\*\s*$/, '').toUpperCase() === 'VIN'
+        );
+        if (hasVin) { headerRowIdx = i; break; }
+      }
+      if (headerRowIdx === -1) {
+        showToast('\u274c Kh\u00f4ng t\u00ecm th\u1ea5y c\u1ed9t VIN trong file. Ki\u1ec3m tra l\u1ea1i file m\u1eabu.', 'error');
+        return;
+      }
+
+      // Tạo bản đồ tên cột → index (chuẩn hoá: bỏ *, trim, uppercase)
+      const headerRow = allRows[headerRowIdx];
+      const colMap = {};
+      headerRow.forEach((cell, idx) => {
+        const name = String(cell).trim().replace(/\s*\*\s*$/, '').toUpperCase();
+        if (name) colMap[name] = idx;
+      });
+
+      // Hàm lấy giá trị theo tên cột (tự động fallback tên tiếng Việt)
+      const aliases = {
+        'VIN':       ['VIN'],
+        'MODEL':     ['MODEL', 'LOẠI XE', 'DONG XE'],
+        'COLOR':     ['COLOR', 'MÀU', 'MAU XE', 'MÀU XE'],
+        'VERSION':   ['VERSION', 'PHIÊN BẢN', 'PHIEN BAN'],
+        'YEAR':      ['YEAR', 'NĂM', 'NAM SAN XUAT', 'NĂM SX'],
+        'PO_NUMBER': ['PO_NUMBER', 'PO', 'SỐ PO'],
+        'NOTE':      ['NOTE', 'GHI CHÚ', 'GHI CHU']
+      };
+      const getCol = (row, field) => {
+        for (const alias of (aliases[field] || [field])) {
+          if (colMap[alias] !== undefined) return String(row[colMap[alias]] || '').trim();
+        }
+        return '';
+      };
+
+      // Lấy các dòng dữ liệu thực (bỏ header row, bỏ dòng mô tả ngay sau header,
+      // bỏ dòng trống, bỏ dòng mà VIN trông giống mô tả — chứa "BẮT BUỘC")
+      const dataRows = allRows.slice(headerRowIdx + 1).filter(row => {
+        const vin = String(row[colMap['VIN']] || '').trim();
+        if (!vin) return false;                              // bỏ dòng trống
+        if (vin.toUpperCase().includes('B\u1eaAT BU\u1ed8C')) return false; // bỏ dòng mô tả
+        return true;
+      });
+
+      if (!dataRows.length) {
+        showToast('\u274c Kh\u00f4ng c\u00f3 d\u1eef li\u1ec7u xe n\u00e0o trong file.', 'error');
+        return;
+      }
+
+      const rows = dataRows.map(r => ({
+        VIN:       getCol(r, 'VIN').toUpperCase(),
+        MODEL:     getCol(r, 'MODEL'),
+        COLOR:     getCol(r, 'COLOR'),
+        VERSION:   getCol(r, 'VERSION'),
+        YEAR:      getCol(r, 'YEAR'),
+        PO_NUMBER: getCol(r, 'PO_NUMBER'),
+        NOTE:      getCol(r, 'NOTE')
       }));
+
       showToast('\u23f3 \u0110ang ki\u1ec3m tra ' + rows.length + ' d\u00f2ng...', 'info');
       const res = await API.vehicles.importPreview(rows);
       if(!res.success) { showToast(res.message, 'error'); return; }
@@ -345,7 +436,7 @@ document.getElementById('btnVReset').onclick = () => {
 async function loadVehicles(page) {
   vPage = page || 1;
   const tbody = document.getElementById('vehiclesTbody');
-  tbody.innerHTML = '<tr class="e-row"><td colspan="9">\u23f3 \u0110ang t\u1ea3i...</td></tr>';
+  tbody.innerHTML = '<tr class="e-row"><td colspan="10">⏳ Đang tải...</td></tr>';
   try {
     const res = await API.vehicles.list({
       search: document.getElementById('vSearch').value.trim(),
@@ -358,8 +449,22 @@ async function loadVehicles(page) {
     const {items, pagination} = res.data;
     const start = (pagination.page - 1) * pagination.pageSize;
     tbody.innerHTML = items.length
-      ? items.map((v, i) => '<tr><td>' + (start+i+1) + '</td><td><b>' + v.VIN + '</b></td><td>' + (v.MODEL||'') + '</td><td>' + (v.COLOR||'') + '</td><td>' + (v.VERSION||'') + '</td><td>' + (v.YEAR||'') + '</td><td>' + statusBadge(v.WAREHOUSE_STATUS) + '</td><td>' + statusBadge(v.SALES_STATUS) + '</td><td>' + (v.WAREHOUSE_ID||'&mdash;') + '</td></tr>').join('')
-      : '<tr class="e-row"><td colspan="9">\u2205 Kh\u00f4ng c\u00f3 xe n\u00e0o</td></tr>';
+      ? items.map((v, i) =>
+          '<tr><td>' + (start+i+1) + '</td>' +
+          '<td><b>' + v.VIN + '</b></td>' +
+          '<td>' + (v.MODEL||'') + '</td>' +
+          '<td>' + (v.COLOR||'') + '</td>' +
+          '<td>' + (v.VERSION||'') + '</td>' +
+          '<td>' + (v.YEAR||'') + '</td>' +
+          '<td>' + (v.PO_NUMBER||'&mdash;') + '</td>' +
+          '<td>' + statusBadge(v.WAREHOUSE_STATUS) + '</td>' +
+          '<td>' + statusBadge(v.SALES_STATUS) + '</td>' +
+          '<td>' + (_whMap[v.WAREHOUSE_ID] || v.WAREHOUSE_ID || '&mdash;') + '</td>' +
+          '<td><button class="btn btn-sec btn-sm" style="padding:.22rem .55rem;font-size:.75rem" ' +
+            'data-vin="' + v.VIN + '" data-photos=\'' + JSON.stringify(typeof v.PHOTOS==='string'?JSON.parse(v.PHOTOS||'{}'):(v.PHOTOS||{})).replace(/'/g,'&#39;') + '\' onclick="openPhotoModal(this)">📸</button></td>' +
+          '</tr>'
+        ).join('')
+      : '<tr class="e-row"><td colspan="11">∅ Không có xe nào</td></tr>';
     makePgn('vehiclesPgn', pagination.total, 20, vPage, 'loadVehicles');
   } catch(e) { showToast(e.message, 'error'); }
 }
@@ -371,7 +476,7 @@ async function loadRequests(page) {
   rPage = page || 1;
   document.getElementById('requestsTbody').innerHTML = '<tr class="e-row"><td colspan="7">\u23f3 \u0110ang t\u1ea3i...</td></tr>';
   try {
-    const res = await API.requests.list({status:'\u0110\u1ee2I DUY\u1ec6T', page: rPage, pageSize: 20});
+    const res = await API.requests.list({status:'CHỜ DUYỆT', page: rPage, pageSize: 20});
     if(!res.success) { showToast(res.message, 'error'); return; }
     const {items, pagination} = res.data;
     const badge = document.getElementById('reqBadge');
@@ -408,15 +513,28 @@ document.getElementById('btnRejectSubmit').onclick = async function() {
   if(res.success) { document.getElementById('rejectModal').classList.remove('open'); loadRequests(rPage); }
 };
 // ---- WAREHOUSES ----
+async function buildWhMap() {
+  try {
+    const res = await API.warehouses.list();
+    if (res.success) {
+      _whMap = {};
+      (res.data || []).forEach(w => { _whMap[w.ID] = w.NAME; });
+    }
+  } catch(e) {}
+}
+
 async function loadWarehouses() {
   try {
     const res = await API.warehouses.list();
     if(!res.success) { showToast(res.message, 'error'); return; }
     const items = res.data || [];
+    // Cập nhật _whMap để resolve ID → tên kho khi hiển thị
+    _whMap = {};
+    items.forEach(w => { _whMap[w.ID] = w.NAME; });
     document.getElementById('warehousesTbody').innerHTML = items.length
-      ? items.map(w => '<tr><td><code>' + w.ID + '</code></td><td>' + w.NAME + '</td><td>' + (w.ADDRESS || '&mdash;
-    UI.stagger(document.getElementById('warehousesTbody').querySelectorAll('tr'),'anim-slide-up',25);') + '</td><td>' + (w.ACTIVE ? '<span class="bs bs-dv">Ho\u1ea1t \u0111\u1ed9ng</span>' : '<span class="bs bs-xh">\u1ea8n</span>') + '</td><td><button class="btn btn-sec btn-sm" data-wid="' + w.ID + '" data-active="' + (!w.ACTIVE) + '">' + (w.ACTIVE ? 'V\u00f4 hi\u1ec7u' : 'K\u00edch ho\u1ea1t') + '</button></td></tr>').join('')
+      ? items.map(w => '<tr><td><code>' + w.ID + '</code></td><td>' + w.NAME + '</td><td>' + (w.ADDRESS || '&mdash;') + '</td><td>' + (w.ACTIVE ? '<span class="bs bs-dv">Ho\u1ea1t \u0111\u1ed9ng</span>' : '<span class="bs bs-xh">\u1ea8n</span>') + '</td><td><button class="btn btn-sec btn-sm" data-wid="' + w.ID + '" data-active="' + (!w.ACTIVE) + '">' + (w.ACTIVE ? 'V\u00f4 hi\u1ec7u' : 'K\u00edch ho\u1ea1t') + '</button></td></tr>').join('')
       : '<tr class="e-row"><td colspan="5">Ch\u01b0a c\u00f3 kho n\u00e0o</td></tr>';
+    UI.stagger(document.getElementById('warehousesTbody').querySelectorAll('tr'),'anim-slide-up',25);
     document.getElementById('warehousesTbody').querySelectorAll('[data-wid]').forEach(b => b.onclick = () => toggleWarehouse(b.dataset.wid, b.dataset.active === 'true'));
     const sel = document.getElementById('vWarehouse');
     const cur = sel.value;
@@ -477,30 +595,78 @@ async function toggleUser(username, active) {
 
 // ---- LOGS ----
 document.getElementById('btnLReload').onclick = () => loadLogs();
-document.getElementById('logAction').onchange = () => loadLogs();
+document.getElementById('logFilter').onchange = () => loadLogs();
+
+function fmtDetail(detail) {
+  if (!detail || !Object.keys(detail).length) return '&mdash;';
+  return Object.entries(detail)
+    .map(([k, v]) => '<span style="color:var(--ac)">' + k + '</span>: ' + (typeof v === 'object' ? JSON.stringify(v) : v))
+    .join(' · ');
+}
 
 async function loadLogs(page) {
   lPage = page || 1;
-  document.getElementById('logsTbody').innerHTML = '<tr class="e-row"><td colspan="5">\u23f3 \u0110ang t\u1ea3i...</td></tr>';
-    UI.stagger(document.getElementById('logsTbody').querySelectorAll('tr'),'anim-slide-up',25);
+  document.getElementById('logsTbody').innerHTML = '<tr class="e-row"><td colspan="5">⏳ Đang tải...</td></tr>';
   try {
-    const res = await API.logs.list({action: document.getElementById('logAction').value, page: lPage, pageSize: 50});
+    const filterAction = document.getElementById('logFilter').value;
+    const res = await API.logs.list({filterAction, page: lPage, pageSize: 50});
     if(!res.success) { showToast(res.message, 'error'); return; }
     const {items, pagination} = res.data;
     document.getElementById('logsTbody').innerHTML = items.length
-      ? items.map(l => '<tr><td><small>' + l.TIMESTAMP + '</small></td><td><span class="bs bs-gy">' + l.ACTION + '</span></td><td>' + (l.VIN || '&mdash;') + '</td><td>' + (l.USERNAME||'') + '</td><td><small style="color:var(--mu)">' + JSON.stringify(l.DETAIL||{}) + '</small></td></tr>').join('')
-      : '<tr class="e-row"><td colspan="5">\u2205 Kh\u00f4ng c\u00f3 log</td></tr>';
+      ? items.map(l => '<tr>' +
+          '<td><small>' + (l.TIMESTAMP || '') + '</small></td>' +
+          '<td><span class="bs bs-gy">' + (l.ACTION || '') + '</span></td>' +
+          '<td>' + (l.VIN || '&mdash;') + '</td>' +
+          '<td>' + (l.PERFORMED_BY || '&mdash;') + '</td>' +
+          '<td><small>' + fmtDetail(l.DETAIL) + '</small></td>' +
+          '</tr>').join('')
+      : '<tr class="e-row"><td colspan="5">∅ Không có log</td></tr>';
+    if(items.length) UI.stagger(document.getElementById('logsTbody').querySelectorAll('tr'),'anim-slide-up',25);
     makePgn('logsPgn', pagination.total, 50, lPage, 'loadLogs');
   } catch(e) { showToast(e.message, 'error'); }
 }
 
 // ---- MODAL CLOSE ON OVERLAY ----
 document.querySelectorAll('.modal-ov').forEach(m => m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); }));
+document.getElementById('btnPhotoClose').onclick = () => document.getElementById('photoModal').classList.remove('open');
 
-// ---- INIT: load pending count ----
+// ---- PHOTO MODAL ----
+function photoThumb(url) {
+  if (!url) return '';
+  // https://drive.google.com/uc?export=view&id=FILE_ID  →  lh3 CDN thumbnail
+  const m = url.match(/[?&]id=([^&]+)/);
+  return m ? 'https://lh3.googleusercontent.com/d/' + m[1] + '=w400' : url;
+}
+
+function renderPhotoGrid(containerId, urls) {
+  const el = document.getElementById(containerId);
+  if (!urls || urls.length === 0) {
+    el.innerHTML = '<p class="photo-empty">Chưa có ảnh</p>';
+    return;
+  }
+  el.innerHTML = urls.map(u =>
+    '<a href="' + u + '" target="_blank" title="Mở ảnh gốc">' +
+    '<img src="' + photoThumb(u) + '" alt="ảnh xe" loading="lazy" onerror="this.src=\'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'60\'%3E%3Crect fill=\'%23334155\' width=\'80\' height=\'60\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%2394a3b8\' font-size=\'10\'%3E❌%3C/text%3E%3C/svg%3E\'">' +
+    '</a>'
+  ).join('');
+}
+
+function openPhotoModal(btn) {
+  const vin = btn.dataset.vin;
+  let photos = {};
+  try { photos = JSON.parse(btn.dataset.photos || '{}'); } catch(e) {}
+  document.getElementById('photoModalVin').textContent = vin;
+  renderPhotoGrid('pgInbound',  photos.in  || []);
+  renderPhotoGrid('pgOutbound', photos.out || []);
+  document.getElementById('photoModal').classList.add('open');
+}
+
+// ---- INIT: load pending count + warehouse map ----
 (async () => {
+  // Build warehouse map sớm để mọi tab dùng được ngay
+  await buildWhMap();
   try {
-    const res = await API.requests.list({status:'\u0110\u1ee2I DUY\u1ec6T', pageSize:1});
+    const res = await API.requests.list({status:'CHỜ DUYỆT', pageSize:1});
     if(res.success && res.data.pagination.total > 0) {
       const b = document.getElementById('reqBadge');
       b.textContent = res.data.pagination.total;
