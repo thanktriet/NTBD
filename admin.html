@@ -101,20 +101,41 @@ tr:hover td{background:rgba(255,255,255,.018)}
 .veh-meta{font-size:.78rem;color:var(--mu);margin:.2rem 0}
 .veh-wh{font-size:.78rem;color:var(--mu);margin:.15rem 0}
 .veh-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-top:.35rem}
-/* ── Mobile tab bar ── */
-.mob-nav{display:none;background:var(--sf);border-bottom:1px solid var(--bd);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.mob-nav::-webkit-scrollbar{display:none}
-.mob-tabs{display:flex;min-width:max-content}
-.mob-tab{flex:none;padding:.55rem .75rem;font-size:.75rem;color:var(--mu);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;user-select:none;-webkit-tap-highlight-color:transparent;position:relative}
-.mob-tab.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:600}
-/* ── Overlay ── */
-.sb-overlay{display:none}
-/* ── Mobile breakpoint ≤ 768px ── */
+/* ════════════════════════════════
+   MOBILE — bottom sheet menu
+   ════════════════════════════════ */
+/* Nút mở menu cố định dưới cùng */
+.mob-fab{display:none;position:fixed;bottom:1.1rem;right:1.1rem;z-index:400;
+  width:48px;height:48px;border-radius:50%;background:var(--ac);border:none;
+  color:#fff;font-size:1.3rem;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);
+  align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+/* Overlay mờ */
+.mob-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:350}
+.mob-ov.open{display:block}
+/* Panel trượt lên từ dưới */
+.mob-sheet{position:fixed;bottom:0;left:0;right:0;z-index:360;
+  background:var(--sf);border-top:1px solid var(--bd);border-radius:16px 16px 0 0;
+  padding:1rem 0 calc(1rem + env(safe-area-inset-bottom));
+  transform:translateY(100%);transition:transform .28s ease;max-height:80vh;overflow-y:auto}
+.mob-sheet.open{transform:translateY(0)}
+.mob-sheet-handle{width:36px;height:4px;background:var(--bd);border-radius:2px;margin:0 auto .75rem}
+.mob-sheet-title{font-size:.72rem;color:var(--mu);padding:.1rem 1.1rem .5rem;text-transform:uppercase;letter-spacing:.06em}
+.mob-menu-item{display:flex;align-items:center;gap:.7rem;padding:.75rem 1.1rem;
+  color:var(--tx);cursor:pointer;font-size:.9rem;-webkit-tap-highlight-color:transparent}
+.mob-menu-item:active{background:var(--sf2)}
+.mob-menu-item.active{color:var(--ac);font-weight:600}
+.mob-menu-item .m-badge{background:var(--re);color:#fff;border-radius:9999px;
+  font-size:.62rem;padding:.06rem .35rem;font-weight:700;margin-left:auto}
+/* Header tên tab trên mobile */
+.mob-hdr{display:none;padding:.65rem 1rem;background:var(--sf);
+  border-bottom:1px solid var(--bd);font-weight:600;font-size:.9rem}
+/* Main cần padding-bottom để không bị fab che */
 @media(max-width:768px){
   .sidebar{display:none}
-  .mob-nav{display:block}
-  .main{margin-left:0}
+  .mob-fab{display:flex}
+  .mob-hdr{display:block}
   .m-hdr{display:none}
+  .main{margin-left:0;padding-bottom:4rem}
   .m-body{padding:.85rem .7rem}
   .filter-bar{gap:.4rem}
   .fg input,.fg select{font-size:.8rem;width:100%}
@@ -125,7 +146,21 @@ tr:hover td{background:rgba(255,255,255,.018)}
 </style>
 <link rel='stylesheet' href='css/wms-animate.css'>
 </head><body>
-<div class='sb-overlay' id='sbOverlay'></div>
+<div class='mob-ov' id='mobOv'></div>
+<div class='mob-sheet' id='mobSheet'>
+  <div class='mob-sheet-handle'></div>
+  <div class='mob-sheet-title'>Menu</div>
+  <div class='mob-menu-item active' data-tab='import'>📥 Import xe</div>
+  <div class='mob-menu-item' data-tab='vehicles'>🚗 Danh sách xe</div>
+  <div class='mob-menu-item' data-tab='requests'>✅ Duyệt yêu cầu<span class='m-badge' id='mobReqBadge' style='display:none'>0</span></div>
+  <div class='mob-menu-item' data-tab='warehouses'>🏭 Quản lý kho</div>
+  <div class='mob-menu-item' data-tab='users'>👥 Người dùng</div>
+  <div class='mob-menu-item' data-tab='logs'>📋 Log hệ thống</div>
+  <div style='border-top:1px solid var(--bd);margin:.5rem 0'></div>
+  <div class='mob-menu-item' id='mobBtnLogout' style='color:var(--re)'>🚪 Đăng xuất</div>
+</div>
+<button class='mob-fab' id='mobFab' aria-label='Menu'>☰</button>
+<div class='mob-hdr' id='mobHdr'>Import xe</div>
 <div class='sidebar' id='sidebar'>
   <div class='s-logo'>🏭 WMS<small>Admin Panel</small></div>
   <nav class='s-nav'>
@@ -139,16 +174,6 @@ tr:hover td{background:rgba(255,255,255,.018)}
   <div class='s-footer'>
     <div class='u-name'><b id='sidebarName'>Admin</b>Quản trị viên</div>
     <button class='btn-out' id='btnLogout'>🚪 Đăng xuất</button>
-  </div>
-</div>
-<div class='mob-nav' id='mobNav'>
-  <div class='mob-tabs'>
-    <div class='mob-tab active' data-tab='import'>📥 Import</div>
-    <div class='mob-tab' data-tab='vehicles'>🚗 Xe</div>
-    <div class='mob-tab' data-tab='requests'>✅ Duyệt YC</div>
-    <div class='mob-tab' data-tab='warehouses'>🏭 Kho</div>
-    <div class='mob-tab' data-tab='users'>👥 Users</div>
-    <div class='mob-tab' data-tab='logs'>📋 Log</div>
   </div>
 </div>
 <div class='main'><div class='m-hdr' id='mainHdr'><button class='hamburger' id='btnHamburger' aria-label='Menu'>☰</button><span id='mainHdrTitle'>Import xe</span></div><div class='m-body'>
@@ -691,37 +716,63 @@ function openPhotoModal(btn) {
       b.style.display = 'inline';
     }
   } catch(e) {}
-// ---- MOBILE TAB BAR ----
+// ---- MOBILE BOTTOM SHEET MENU ----
 (function() {
+  const fab   = document.getElementById('mobFab');
+  const sheet = document.getElementById('mobSheet');
+  const ov    = document.getElementById('mobOv');
+  const hdr   = document.getElementById('mobHdr');
+
+  function openSheet()  { sheet.classList.add('open'); ov.classList.add('open'); fab.textContent = '✕'; }
+  function closeSheet() { sheet.classList.remove('open'); ov.classList.remove('open'); fab.textContent = '☰'; }
+
+  fab.addEventListener('click', () => sheet.classList.contains('open') ? closeSheet() : openSheet());
+  ov.addEventListener('click', closeSheet);
+
   function switchTab(tab) {
-    // Cập nhật mob-tab active
-    document.querySelectorAll('.mob-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-    // Cập nhật sidebar nav-item active (desktop)
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab === tab));
+    // Cập nhật mob-menu active
+    document.querySelectorAll('.mob-menu-item[data-tab]').forEach(t =>
+      t.classList.toggle('active', t.dataset.tab === tab));
+    // Cập nhật sidebar nav-item (desktop)
+    document.querySelectorAll('.nav-item').forEach(n =>
+      n.classList.toggle('active', n.dataset.tab === tab));
     // Chuyển tab pane
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
     const pane = document.getElementById('tab-' + tab);
     if (pane) pane.classList.add('active');
-    // Cập nhật header title
+    // Cập nhật header
+    const label = TAB_LABELS[tab] || tab;
     const titleEl = document.getElementById('mainHdrTitle');
-    if (titleEl) titleEl.textContent = TAB_LABELS[tab] || tab;
-    // Scroll mob-tab active vào giữa
-    const activeTab = document.querySelector('.mob-tab.active');
-    if (activeTab) activeTab.scrollIntoView({ inline: 'center', behavior: 'smooth' });
+    if (titleEl) titleEl.textContent = label;
+    if (hdr) hdr.textContent = label;
     // Load data
     if (tab === 'vehicles') loadVehicles();
     else if (tab === 'requests') loadRequests();
     else if (tab === 'warehouses') loadWarehouses();
     else if (tab === 'users') loadUsers();
     else if (tab === 'logs') loadLogs();
+    closeSheet();
   }
-  // Click trên mob-tab
-  document.querySelectorAll('.mob-tab').forEach(t => {
-    t.addEventListener('click', () => switchTab(t.dataset.tab));
-  });
-  // Click trên sidebar (desktop) → đồng bộ mob-tab
-  document.querySelectorAll('.nav-item').forEach(n => {
-    n.addEventListener('click', () => { if (n.dataset.tab) switchTab(n.dataset.tab); });
-  });
+
+  // Click menu items trong sheet
+  document.querySelectorAll('.mob-menu-item[data-tab]').forEach(t =>
+    t.addEventListener('click', () => switchTab(t.dataset.tab)));
+
+  // Logout trong sheet
+  document.getElementById('mobBtnLogout').addEventListener('click', () => AUTH.logout());
+
+  // Click sidebar desktop → đồng bộ sheet
+  document.querySelectorAll('.nav-item').forEach(n =>
+    n.addEventListener('click', () => { if (n.dataset.tab) switchTab(n.dataset.tab); }));
+
+  // Đồng bộ badge YC với sidebar
+  const sideReqBadge = document.getElementById('reqBadge');
+  const mobReqBadge  = document.getElementById('mobReqBadge');
+  if (sideReqBadge && mobReqBadge) {
+    new MutationObserver(() => {
+      mobReqBadge.textContent = sideReqBadge.textContent;
+      mobReqBadge.style.display = sideReqBadge.style.display;
+    }).observe(sideReqBadge, { childList: true, attributes: true, attributeFilter: ['style'] });
+  }
 })();
 </script></body></html>
