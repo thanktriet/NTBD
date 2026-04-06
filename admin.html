@@ -20,7 +20,7 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);displ
 .btn-out{width:100%;padding:.38rem;background:transparent;border:1px solid var(--bd);border-radius:6px;color:var(--mu);cursor:pointer;font-size:.78rem}
 .btn-out:hover{border-color:var(--re);color:var(--re)}
 .main{margin-left:220px;flex:1;display:flex;flex-direction:column}
-.m-hdr{padding:.8rem 1.4rem;border-bottom:1px solid var(--bd);background:var(--sf);font-weight:600;font-size:.95rem}
+.m-hdr{padding:.8rem 1.4rem;border-bottom:1px solid var(--bd);background:var(--sf);font-weight:600;font-size:.95rem;display:flex;align-items:center;gap:.6rem}
 .m-body{padding:1.25rem;flex:1}
 .tab-pane{display:none}.tab-pane.active{display:block}
 .card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:1.2rem;margin-bottom:1rem}
@@ -102,7 +102,7 @@ tr:hover td{background:rgba(255,255,255,.018)}
 .veh-wh{font-size:.78rem;color:var(--mu);margin:.15rem 0}
 .veh-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-top:.35rem}
 /* ── Hamburger button (ẩn trên desktop) ── */
-.hamburger{display:none;position:fixed;top:.6rem;left:.7rem;z-index:300;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:.42rem .55rem;cursor:pointer;color:var(--tx);font-size:1.15rem;line-height:1}
+.hamburger{display:none;background:transparent;border:none;cursor:pointer;color:var(--tx);font-size:1.25rem;line-height:1;padding:.1rem .3rem;flex-shrink:0}
 /* ── Overlay backdrop khi sidebar mở trên mobile ── */
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99}
 .sb-overlay.open{display:block}
@@ -112,7 +112,7 @@ tr:hover td{background:rgba(255,255,255,.018)}
   .sidebar{transform:translateX(-100%);transition:transform .25s ease;z-index:200;pointer-events:none}
   .sidebar.open{transform:translateX(0);pointer-events:auto}
   .main{margin-left:0}
-  .m-hdr{padding:.65rem 1rem .65rem 3.2rem}
+  .m-hdr{padding:.65rem 1rem}
   .m-body{padding:.85rem .7rem}
   .filter-bar{gap:.4rem}
   .fg input,.fg select{font-size:.8rem;width:100%}
@@ -123,7 +123,6 @@ tr:hover td{background:rgba(255,255,255,.018)}
 </style>
 <link rel='stylesheet' href='css/wms-animate.css'>
 </head><body>
-<button class='hamburger' id='btnHamburger' aria-label='Menu'>☰</button>
 <div class='sb-overlay' id='sbOverlay'></div>
 <div class='sidebar' id='sidebar'>
   <div class='s-logo'>🏭 WMS<small>Admin Panel</small></div>
@@ -140,7 +139,7 @@ tr:hover td{background:rgba(255,255,255,.018)}
     <button class='btn-out' id='btnLogout'>🚪 Đăng xuất</button>
   </div>
 </div>
-<div class='main'><div class='m-hdr' id='mainHdr'>Import xe</div><div class='m-body'>
+<div class='main'><div class='m-hdr' id='mainHdr'><button class='hamburger' id='btnHamburger' aria-label='Menu'>☰</button><span id='mainHdrTitle'>Import xe</span></div><div class='m-body'>
 <div class='tab-pane active' id='tab-import'>
   <div class='card'><div class='card-hdr'><span class='card-title'>📥 Import xe từ Excel</span><a href='xe_mau.xlsx' download='WMS_Danh_Sach_Xe_Mau.xlsx' class='btn btn-sec btn-sm' style='text-decoration:none'>📥 Tải file mẫu</a></div>
   <div class='drop-zone' id='dropZone'><div class='dz-icon'>📄</div>
@@ -269,7 +268,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
     const tab = item.dataset.tab;
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
-    document.getElementById('mainHdr').textContent = TAB_LABELS[tab] || tab;
+    document.getElementById('mainHdrTitle').textContent = TAB_LABELS[tab] || tab;
     if(tab === 'vehicles') loadVehicles();
     else if(tab === 'requests') loadRequests();
     else if(tab === 'warehouses') loadWarehouses();
