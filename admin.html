@@ -101,11 +101,13 @@ tr:hover td{background:rgba(255,255,255,.018)}
 .veh-meta{font-size:.78rem;color:var(--mu);margin:.2rem 0}
 .veh-wh{font-size:.78rem;color:var(--mu);margin:.15rem 0}
 .veh-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-top:.35rem}
-/* ── Mobile nav select (thay sidebar) ── */
-.mob-nav{display:none;padding:.5rem .75rem;background:var(--sf);border-bottom:1px solid var(--bd)}
-.mob-nav select{width:100%;padding:.5rem .7rem;background:var(--bg);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:.88rem;outline:none}
-.mob-nav select option{background:var(--sf)}
-/* ── Overlay backdrop khi sidebar mở trên mobile ── */
+/* ── Mobile tab bar ── */
+.mob-nav{display:none;background:var(--sf);border-bottom:1px solid var(--bd);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.mob-nav::-webkit-scrollbar{display:none}
+.mob-tabs{display:flex;min-width:max-content}
+.mob-tab{flex:none;padding:.55rem .75rem;font-size:.75rem;color:var(--mu);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;user-select:none;-webkit-tap-highlight-color:transparent;position:relative}
+.mob-tab.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:600}
+/* ── Overlay ── */
 .sb-overlay{display:none}
 /* ── Mobile breakpoint ≤ 768px ── */
 @media(max-width:768px){
@@ -139,15 +141,15 @@ tr:hover td{background:rgba(255,255,255,.018)}
     <button class='btn-out' id='btnLogout'>🚪 Đăng xuất</button>
   </div>
 </div>
-<div class='mob-nav'>
-  <select id='mobNav'>
-    <option value='import'>📥 Import xe</option>
-    <option value='vehicles'>🚗 Danh sách xe</option>
-    <option value='requests'>✅ Duyệt YC</option>
-    <option value='warehouses'>🏭 Quản lý kho</option>
-    <option value='users'>👥 Người dùng</option>
-    <option value='logs'>📋 Log hệ thống</option>
-  </select>
+<div class='mob-nav' id='mobNav'>
+  <div class='mob-tabs'>
+    <div class='mob-tab active' data-tab='import'>📥 Import</div>
+    <div class='mob-tab' data-tab='vehicles'>🚗 Xe</div>
+    <div class='mob-tab' data-tab='requests'>✅ Duyệt YC</div>
+    <div class='mob-tab' data-tab='warehouses'>🏭 Kho</div>
+    <div class='mob-tab' data-tab='users'>👥 Users</div>
+    <div class='mob-tab' data-tab='logs'>📋 Log</div>
+  </div>
 </div>
 <div class='main'><div class='m-hdr' id='mainHdr'><button class='hamburger' id='btnHamburger' aria-label='Menu'>☰</button><span id='mainHdrTitle'>Import xe</span></div><div class='m-body'>
 <div class='tab-pane active' id='tab-import'>
@@ -270,22 +272,8 @@ let importValidRows = [], rejectRequestId = null;
 let vPage = 1, rPage = 1, lPage = 1;
 let _whMap = {}; // warehouseId → warehouseName
 
-// ---- NAVIGATION ----
-document.querySelectorAll('.nav-item').forEach(item => {
-  item.addEventListener('click', () => {
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    item.classList.add('active');
-    const tab = item.dataset.tab;
-    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
-    document.getElementById('mainHdrTitle').textContent = TAB_LABELS[tab] || tab;
-    if(tab === 'vehicles') loadVehicles();
-    else if(tab === 'requests') loadRequests();
-    else if(tab === 'warehouses') loadWarehouses();
-    else if(tab === 'users') loadUsers();
-    else if(tab === 'logs') loadLogs();
-  });
-});
+// ---- NAVIGATION (desktop sidebar — gọi lại switchTab định nghĩa ở cuối) ----
+// Handler được đăng ký trong MOBILE TAB BAR block (cuối script) để tránh duplicate.
 document.getElementById('btnLogout').onclick = () => AUTH.logout();
 
 // ---- TOAST ----
@@ -703,30 +691,37 @@ function openPhotoModal(btn) {
       b.style.display = 'inline';
     }
   } catch(e) {}
-// ---- MOBILE NAV SELECT ----
+// ---- MOBILE TAB BAR ----
 (function() {
-  const mobNav = document.getElementById('mobNav');
-  if (!mobNav) return;
-  // Khi chọn từ dropdown mobile → chuyển tab
-  mobNav.addEventListener('change', function() {
-    const tab = this.value;
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const sideItem = document.querySelector('.nav-item[data-tab="' + tab + '"]');
-    if (sideItem) sideItem.classList.add('active');
+  function switchTab(tab) {
+    // Cập nhật mob-tab active
+    document.querySelectorAll('.mob-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    // Cập nhật sidebar nav-item active (desktop)
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab === tab));
+    // Chuyển tab pane
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
     const pane = document.getElementById('tab-' + tab);
     if (pane) pane.classList.add('active');
-    document.getElementById('mainHdrTitle').textContent = TAB_LABELS[tab] || tab;
+    // Cập nhật header title
+    const titleEl = document.getElementById('mainHdrTitle');
+    if (titleEl) titleEl.textContent = TAB_LABELS[tab] || tab;
+    // Scroll mob-tab active vào giữa
+    const activeTab = document.querySelector('.mob-tab.active');
+    if (activeTab) activeTab.scrollIntoView({ inline: 'center', behavior: 'smooth' });
+    // Load data
     if (tab === 'vehicles') loadVehicles();
     else if (tab === 'requests') loadRequests();
     else if (tab === 'warehouses') loadWarehouses();
     else if (tab === 'users') loadUsers();
     else if (tab === 'logs') loadLogs();
+  }
+  // Click trên mob-tab
+  document.querySelectorAll('.mob-tab').forEach(t => {
+    t.addEventListener('click', () => switchTab(t.dataset.tab));
   });
-  // Khi click sidebar (desktop) → đồng bộ dropdown
-  document.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', () => {
-    const tab = n.dataset.tab;
-    if (tab) mobNav.value = tab;
-  }));
+  // Click trên sidebar (desktop) → đồng bộ mob-tab
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.addEventListener('click', () => { if (n.dataset.tab) switchTab(n.dataset.tab); });
+  });
 })();
 </script></body></html>
