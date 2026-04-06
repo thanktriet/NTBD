@@ -101,18 +101,18 @@ tr:hover td{background:rgba(255,255,255,.018)}
 .veh-meta{font-size:.78rem;color:var(--mu);margin:.2rem 0}
 .veh-wh{font-size:.78rem;color:var(--mu);margin:.15rem 0}
 .veh-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-top:.35rem}
-/* ── Hamburger button (ẩn trên desktop) ── */
-.hamburger{display:none;background:transparent;border:none;cursor:pointer;color:var(--tx);font-size:1.25rem;line-height:1;padding:.1rem .3rem;flex-shrink:0}
+/* ── Mobile nav select (thay sidebar) ── */
+.mob-nav{display:none;padding:.5rem .75rem;background:var(--sf);border-bottom:1px solid var(--bd)}
+.mob-nav select{width:100%;padding:.5rem .7rem;background:var(--bg);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:.88rem;outline:none}
+.mob-nav select option{background:var(--sf)}
 /* ── Overlay backdrop khi sidebar mở trên mobile ── */
-.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99}
-.sb-overlay.open{display:block}
+.sb-overlay{display:none}
 /* ── Mobile breakpoint ≤ 768px ── */
 @media(max-width:768px){
-  .hamburger{display:flex;align-items:center;justify-content:center}
-  .sidebar{transform:translateX(-100%);transition:transform .25s ease;z-index:200;pointer-events:none}
-  .sidebar.open{transform:translateX(0);pointer-events:auto}
+  .sidebar{display:none}
+  .mob-nav{display:block}
   .main{margin-left:0}
-  .m-hdr{padding:.65rem 1rem}
+  .m-hdr{display:none}
   .m-body{padding:.85rem .7rem}
   .filter-bar{gap:.4rem}
   .fg input,.fg select{font-size:.8rem;width:100%}
@@ -138,6 +138,16 @@ tr:hover td{background:rgba(255,255,255,.018)}
     <div class='u-name'><b id='sidebarName'>Admin</b>Quản trị viên</div>
     <button class='btn-out' id='btnLogout'>🚪 Đăng xuất</button>
   </div>
+</div>
+<div class='mob-nav'>
+  <select id='mobNav'>
+    <option value='import'>📥 Import xe</option>
+    <option value='vehicles'>🚗 Danh sách xe</option>
+    <option value='requests'>✅ Duyệt YC</option>
+    <option value='warehouses'>🏭 Quản lý kho</option>
+    <option value='users'>👥 Người dùng</option>
+    <option value='logs'>📋 Log hệ thống</option>
+  </select>
 </div>
 <div class='main'><div class='m-hdr' id='mainHdr'><button class='hamburger' id='btnHamburger' aria-label='Menu'>☰</button><span id='mainHdrTitle'>Import xe</span></div><div class='m-body'>
 <div class='tab-pane active' id='tab-import'>
@@ -693,18 +703,30 @@ function openPhotoModal(btn) {
       b.style.display = 'inline';
     }
   } catch(e) {}
-// ---- MOBILE SIDEBAR TOGGLE ----
+// ---- MOBILE NAV SELECT ----
 (function() {
-  const sidebar  = document.getElementById('sidebar');
-  const overlay  = document.getElementById('sbOverlay');
-  const hamburger = document.getElementById('btnHamburger');
-  function openSidebar()  { sidebar.classList.add('open');  overlay.classList.add('open'); }
-  function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
-  hamburger.addEventListener('click', () => sidebar.classList.contains('open') ? closeSidebar() : openSidebar());
-  overlay.addEventListener('click', closeSidebar);
-  // Đóng sidebar khi user chọn tab (mobile)
+  const mobNav = document.getElementById('mobNav');
+  if (!mobNav) return;
+  // Khi chọn từ dropdown mobile → chuyển tab
+  mobNav.addEventListener('change', function() {
+    const tab = this.value;
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const sideItem = document.querySelector('.nav-item[data-tab="' + tab + '"]');
+    if (sideItem) sideItem.classList.add('active');
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    const pane = document.getElementById('tab-' + tab);
+    if (pane) pane.classList.add('active');
+    document.getElementById('mainHdrTitle').textContent = TAB_LABELS[tab] || tab;
+    if (tab === 'vehicles') loadVehicles();
+    else if (tab === 'requests') loadRequests();
+    else if (tab === 'warehouses') loadWarehouses();
+    else if (tab === 'users') loadUsers();
+    else if (tab === 'logs') loadLogs();
+  });
+  // Khi click sidebar (desktop) → đồng bộ dropdown
   document.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', () => {
-    if(window.innerWidth <= 768) closeSidebar();
+    const tab = n.dataset.tab;
+    if (tab) mobNav.value = tab;
   }));
 })();
 </script></body></html>
