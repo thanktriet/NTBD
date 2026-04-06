@@ -101,10 +101,31 @@ tr:hover td{background:rgba(255,255,255,.018)}
 .veh-meta{font-size:.78rem;color:var(--mu);margin:.2rem 0}
 .veh-wh{font-size:.78rem;color:var(--mu);margin:.15rem 0}
 .veh-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-top:.35rem}
+/* ── Hamburger button (ẩn trên desktop) ── */
+.hamburger{display:none;position:fixed;top:.6rem;left:.7rem;z-index:300;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:.42rem .55rem;cursor:pointer;color:var(--tx);font-size:1.15rem;line-height:1}
+/* ── Overlay backdrop khi sidebar mở trên mobile ── */
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99}
+.sb-overlay.open{display:block}
+/* ── Mobile breakpoint ≤ 768px ── */
+@media(max-width:768px){
+  .hamburger{display:flex;align-items:center;justify-content:center}
+  .sidebar{transform:translateX(-100%);transition:transform .25s ease;z-index:200}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .m-hdr{padding:.65rem 1rem .65rem 3.2rem}
+  .m-body{padding:.85rem .7rem}
+  .filter-bar{gap:.4rem}
+  .fg input,.fg select{font-size:.8rem;width:100%}
+  .tbl-wrap{font-size:.78rem}
+  th,td{padding:.45rem .5rem}
+  .form-row{grid-template-columns:1fr}
+}
 </style>
 <link rel='stylesheet' href='css/wms-animate.css'>
 </head><body>
-<div class='sidebar'>
+<button class='hamburger' id='btnHamburger' aria-label='Menu'>☰</button>
+<div class='sb-overlay' id='sbOverlay'></div>
+<div class='sidebar' id='sidebar'>
   <div class='s-logo'>🏭 WMS<small>Admin Panel</small></div>
   <nav class='s-nav'>
     <div class='nav-item active' data-tab='import'>📥 Import xe</div>
@@ -673,5 +694,18 @@ function openPhotoModal(btn) {
       b.style.display = 'inline';
     }
   } catch(e) {}
+// ---- MOBILE SIDEBAR TOGGLE ----
+(function() {
+  const sidebar  = document.getElementById('sidebar');
+  const overlay  = document.getElementById('sbOverlay');
+  const hamburger = document.getElementById('btnHamburger');
+  function openSidebar()  { sidebar.classList.add('open');  overlay.classList.add('open'); }
+  function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
+  hamburger.addEventListener('click', () => sidebar.classList.contains('open') ? closeSidebar() : openSidebar());
+  overlay.addEventListener('click', closeSidebar);
+  // Đóng sidebar khi user chọn tab (mobile)
+  document.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', () => {
+    if(window.innerWidth <= 768) closeSidebar();
+  }));
 })();
 </script></body></html>
