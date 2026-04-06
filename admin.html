@@ -110,14 +110,15 @@ tr:hover td{background:rgba(255,255,255,.018)}
   color:#fff;font-size:1.3rem;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);
   align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
 /* Overlay mờ */
-.mob-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:350}
-.mob-ov.open{display:block}
+.mob-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:350;pointer-events:none}
+.mob-ov.open{display:block;pointer-events:auto}
 /* Panel trượt lên từ dưới */
 .mob-sheet{position:fixed;bottom:0;left:0;right:0;z-index:360;
   background:var(--sf);border-top:1px solid var(--bd);border-radius:16px 16px 0 0;
   padding:1rem 0 calc(1rem + env(safe-area-inset-bottom));
-  transform:translateY(100%);transition:transform .28s ease;max-height:80vh;overflow-y:auto}
-.mob-sheet.open{transform:translateY(0)}
+  transform:translateY(100%);transition:transform .28s ease;max-height:80vh;overflow-y:auto;
+  pointer-events:none}
+.mob-sheet.open{transform:translateY(0);pointer-events:auto}
 .mob-sheet-handle{width:36px;height:4px;background:var(--bd);border-radius:2px;margin:0 auto .75rem}
 .mob-sheet-title{font-size:.72rem;color:var(--mu);padding:.1rem 1.1rem .5rem;text-transform:uppercase;letter-spacing:.06em}
 .mob-menu-item{display:flex;align-items:center;gap:.7rem;padding:.75rem 1.1rem;
