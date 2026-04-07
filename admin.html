@@ -20,7 +20,7 @@ body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);displ
 .btn-out{width:100%;padding:.38rem;background:transparent;border:1px solid var(--bd);border-radius:6px;color:var(--mu);cursor:pointer;font-size:.78rem}
 .btn-out:hover{border-color:var(--re);color:var(--re)}
 .main{margin-left:220px;flex:1;display:flex;flex-direction:column}
-.m-hdr{padding:.8rem 1.4rem;border-bottom:1px solid var(--bd);background:var(--sf);font-weight:600;font-size:.95rem;display:flex;align-items:center;gap:.6rem}
+.m-hdr{padding:.8rem 1.4rem;border-bottom:1px solid var(--bd);background:var(--sf);font-weight:600;font-size:.95rem}
 .m-body{padding:1.25rem;flex:1}
 .tab-pane{display:none}.tab-pane.active{display:block}
 .card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:1.2rem;margin-bottom:1rem}
@@ -101,42 +101,18 @@ tr:hover td{background:rgba(255,255,255,.018)}
 .veh-meta{font-size:.78rem;color:var(--mu);margin:.2rem 0}
 .veh-wh{font-size:.78rem;color:var(--mu);margin:.15rem 0}
 .veh-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-top:.35rem}
-/* ════════════════════════════════
-   MOBILE — bottom sheet menu
-   ════════════════════════════════ */
-/* Nút mở menu cố định dưới cùng */
-.mob-fab{display:none;position:fixed;bottom:1.1rem;right:1.1rem;z-index:400;
-  width:48px;height:48px;border-radius:50%;background:var(--ac);border:none;
-  color:#fff;font-size:1.3rem;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);
-  align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
-/* Overlay mờ */
-.mob-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:350;pointer-events:none}
-.mob-ov.open{display:block;pointer-events:auto}
-/* Panel trượt lên từ dưới */
-.mob-sheet{position:fixed;bottom:0;left:0;right:0;z-index:360;
-  background:var(--sf);border-top:1px solid var(--bd);border-radius:16px 16px 0 0;
-  padding:1rem 0 calc(1rem + env(safe-area-inset-bottom));
-  transform:translateY(100%);transition:transform .28s ease;max-height:80vh;overflow-y:auto;
-  pointer-events:none}
-.mob-sheet.open{transform:translateY(0);pointer-events:auto}
-.mob-sheet-handle{width:36px;height:4px;background:var(--bd);border-radius:2px;margin:0 auto .75rem}
-.mob-sheet-title{font-size:.72rem;color:var(--mu);padding:.1rem 1.1rem .5rem;text-transform:uppercase;letter-spacing:.06em}
-.mob-menu-item{display:flex;align-items:center;gap:.7rem;padding:.75rem 1.1rem;
-  color:var(--tx);cursor:pointer;font-size:.9rem;-webkit-tap-highlight-color:transparent}
-.mob-menu-item:active{background:var(--sf2)}
-.mob-menu-item.active{color:var(--ac);font-weight:600}
-.mob-menu-item .m-badge{background:var(--re);color:#fff;border-radius:9999px;
-  font-size:.62rem;padding:.06rem .35rem;font-weight:700;margin-left:auto}
-/* Header tên tab trên mobile */
-.mob-hdr{display:none;padding:.65rem 1rem;background:var(--sf);
-  border-bottom:1px solid var(--bd);font-weight:600;font-size:.9rem}
-/* Main cần padding-bottom để không bị fab che */
+/* ── Hamburger button (ẩn trên desktop) ── */
+.hamburger{display:none;position:fixed;top:.6rem;left:.7rem;z-index:300;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:.42rem .55rem;cursor:pointer;color:var(--tx);font-size:1.15rem;line-height:1}
+/* ── Overlay backdrop khi sidebar mở trên mobile ── */
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99}
+.sb-overlay.open{display:block}
+/* ── Mobile breakpoint ≤ 768px ── */
 @media(max-width:768px){
-  .sidebar{display:none}
-  .mob-fab{display:flex}
-  .mob-hdr{display:block}
-  .m-hdr{display:none}
-  .main{margin-left:0;padding-bottom:4rem}
+  .hamburger{display:flex;align-items:center;justify-content:center}
+  .sidebar{transform:translateX(-100%);transition:transform .25s ease;z-index:200}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .m-hdr{padding:.65rem 1rem .65rem 3.2rem}
   .m-body{padding:.85rem .7rem}
   .filter-bar{gap:.4rem}
   .fg input,.fg select{font-size:.8rem;width:100%}
@@ -147,21 +123,8 @@ tr:hover td{background:rgba(255,255,255,.018)}
 </style>
 <link rel='stylesheet' href='css/wms-animate.css'>
 </head><body>
-<div class='mob-ov' id='mobOv'></div>
-<div class='mob-sheet' id='mobSheet'>
-  <div class='mob-sheet-handle'></div>
-  <div class='mob-sheet-title'>Menu</div>
-  <div class='mob-menu-item active' data-tab='import'>📥 Import xe</div>
-  <div class='mob-menu-item' data-tab='vehicles'>🚗 Danh sách xe</div>
-  <div class='mob-menu-item' data-tab='requests'>✅ Duyệt yêu cầu<span class='m-badge' id='mobReqBadge' style='display:none'>0</span></div>
-  <div class='mob-menu-item' data-tab='warehouses'>🏭 Quản lý kho</div>
-  <div class='mob-menu-item' data-tab='users'>👥 Người dùng</div>
-  <div class='mob-menu-item' data-tab='logs'>📋 Log hệ thống</div>
-  <div style='border-top:1px solid var(--bd);margin:.5rem 0'></div>
-  <div class='mob-menu-item' id='mobBtnLogout' style='color:var(--re)'>🚪 Đăng xuất</div>
-</div>
-<button class='mob-fab' id='mobFab' aria-label='Menu'>☰</button>
-<div class='mob-hdr' id='mobHdr'>Import xe</div>
+<button class='hamburger' id='btnHamburger' aria-label='Menu'>☰</button>
+<div class='sb-overlay' id='sbOverlay'></div>
 <div class='sidebar' id='sidebar'>
   <div class='s-logo'>🏭 WMS<small>Admin Panel</small></div>
   <nav class='s-nav'>
@@ -177,7 +140,7 @@ tr:hover td{background:rgba(255,255,255,.018)}
     <button class='btn-out' id='btnLogout'>🚪 Đăng xuất</button>
   </div>
 </div>
-<div class='main'><div class='m-hdr' id='mainHdr'><button class='hamburger' id='btnHamburger' aria-label='Menu'>☰</button><span id='mainHdrTitle'>Import xe</span></div><div class='m-body'>
+<div class='main'><div class='m-hdr' id='mainHdr'>Import xe</div><div class='m-body'>
 <div class='tab-pane active' id='tab-import'>
   <div class='card'><div class='card-hdr'><span class='card-title'>📥 Import xe từ Excel</span><a href='xe_mau.xlsx' download='WMS_Danh_Sach_Xe_Mau.xlsx' class='btn btn-sec btn-sm' style='text-decoration:none'>📥 Tải file mẫu</a></div>
   <div class='drop-zone' id='dropZone'><div class='dz-icon'>📄</div>
@@ -298,8 +261,22 @@ let importValidRows = [], rejectRequestId = null;
 let vPage = 1, rPage = 1, lPage = 1;
 let _whMap = {}; // warehouseId → warehouseName
 
-// ---- NAVIGATION (desktop sidebar — gọi lại switchTab định nghĩa ở cuối) ----
-// Handler được đăng ký trong MOBILE TAB BAR block (cuối script) để tránh duplicate.
+// ---- NAVIGATION ----
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    const tab = item.dataset.tab;
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('mainHdr').textContent = TAB_LABELS[tab] || tab;
+    if(tab === 'vehicles') loadVehicles();
+    else if(tab === 'requests') loadRequests();
+    else if(tab === 'warehouses') loadWarehouses();
+    else if(tab === 'users') loadUsers();
+    else if(tab === 'logs') loadLogs();
+  });
+});
 document.getElementById('btnLogout').onclick = () => AUTH.logout();
 
 // ---- TOAST ----
@@ -717,63 +694,18 @@ function openPhotoModal(btn) {
       b.style.display = 'inline';
     }
   } catch(e) {}
-// ---- MOBILE BOTTOM SHEET MENU ----
+// ---- MOBILE SIDEBAR TOGGLE ----
 (function() {
-  const fab   = document.getElementById('mobFab');
-  const sheet = document.getElementById('mobSheet');
-  const ov    = document.getElementById('mobOv');
-  const hdr   = document.getElementById('mobHdr');
-
-  function openSheet()  { sheet.classList.add('open'); ov.classList.add('open'); fab.textContent = '✕'; }
-  function closeSheet() { sheet.classList.remove('open'); ov.classList.remove('open'); fab.textContent = '☰'; }
-
-  fab.addEventListener('click', () => sheet.classList.contains('open') ? closeSheet() : openSheet());
-  ov.addEventListener('click', closeSheet);
-
-  function switchTab(tab) {
-    // Cập nhật mob-menu active
-    document.querySelectorAll('.mob-menu-item[data-tab]').forEach(t =>
-      t.classList.toggle('active', t.dataset.tab === tab));
-    // Cập nhật sidebar nav-item (desktop)
-    document.querySelectorAll('.nav-item').forEach(n =>
-      n.classList.toggle('active', n.dataset.tab === tab));
-    // Chuyển tab pane
-    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    const pane = document.getElementById('tab-' + tab);
-    if (pane) pane.classList.add('active');
-    // Cập nhật header
-    const label = TAB_LABELS[tab] || tab;
-    const titleEl = document.getElementById('mainHdrTitle');
-    if (titleEl) titleEl.textContent = label;
-    if (hdr) hdr.textContent = label;
-    // Load data
-    if (tab === 'vehicles') loadVehicles();
-    else if (tab === 'requests') loadRequests();
-    else if (tab === 'warehouses') loadWarehouses();
-    else if (tab === 'users') loadUsers();
-    else if (tab === 'logs') loadLogs();
-    closeSheet();
-  }
-
-  // Click menu items trong sheet
-  document.querySelectorAll('.mob-menu-item[data-tab]').forEach(t =>
-    t.addEventListener('click', () => switchTab(t.dataset.tab)));
-
-  // Logout trong sheet
-  document.getElementById('mobBtnLogout').addEventListener('click', () => AUTH.logout());
-
-  // Click sidebar desktop → đồng bộ sheet
-  document.querySelectorAll('.nav-item').forEach(n =>
-    n.addEventListener('click', () => { if (n.dataset.tab) switchTab(n.dataset.tab); }));
-
-  // Đồng bộ badge YC với sidebar
-  const sideReqBadge = document.getElementById('reqBadge');
-  const mobReqBadge  = document.getElementById('mobReqBadge');
-  if (sideReqBadge && mobReqBadge) {
-    new MutationObserver(() => {
-      mobReqBadge.textContent = sideReqBadge.textContent;
-      mobReqBadge.style.display = sideReqBadge.style.display;
-    }).observe(sideReqBadge, { childList: true, attributes: true, attributeFilter: ['style'] });
-  }
+  const sidebar  = document.getElementById('sidebar');
+  const overlay  = document.getElementById('sbOverlay');
+  const hamburger = document.getElementById('btnHamburger');
+  function openSidebar()  { sidebar.classList.add('open');  overlay.classList.add('open'); }
+  function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
+  hamburger.addEventListener('click', () => sidebar.classList.contains('open') ? closeSidebar() : openSidebar());
+  overlay.addEventListener('click', closeSidebar);
+  // Đóng sidebar khi user chọn tab (mobile)
+  document.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', () => {
+    if(window.innerWidth <= 768) closeSidebar();
+  }));
 })();
 </script></body></html>
